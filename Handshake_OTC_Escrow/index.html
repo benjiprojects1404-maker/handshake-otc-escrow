@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Handshake — OTC Escrow on Chain 1404</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070b14;
+    --surface: #0d1424;
+    --surface-raised: #101a2e;
+    --line: rgba(148,190,255,0.12);
+    --line-strong: rgba(148,190,255,0.22);
+    --ink: #eaf2ff;
+    --ink-dim: rgba(234,242,255,0.62);
+    --ink-faint: rgba(234,242,255,0.36);
+    --give: #ff8b6a;
+    --give-dim: rgba(255,139,106,0.14);
+    --get: #37d3f4;
+    --get-dim: rgba(55,211,244,0.14);
+    --private: #a855f7;
+    --private-dim: rgba(168,85,247,0.14);
+    --danger: #ff6b6b;
+    --danger-dim: rgba(255,107,107,0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+      radial-gradient(ellipse 900px 500px at 80% -5%, rgba(56,212,245,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 700px 400px at 10% 10%, rgba(255,139,107,0.05) 0%, transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 100px; }
+  ::selection { background: var(--get); color: #08110a; }
+
+  /* ---- Header ---- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .mark {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--give), var(--private), var(--get));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; color: #0a0a0a; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .brand .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.2px;
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+  .brand .name-text {
+    font-weight: 700;
+    font-size: 23px;
+    background: linear-gradient(90deg, var(--give) 0%, var(--private) 50%, var(--get) 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 14px rgba(168,85,247,0.35));
+    animation: nameShimmer 7s ease-in-out infinite;
+  }
+  @keyframes nameShimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .brand .name-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    color: var(--private);
+    border: 1px solid rgba(168,85,247,0.35);
+    background: rgba(168,85,247,0.08);
+    border-radius: 20px;
+    padding: 3px 8px;
+  }
+  .beta-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--give-dim);
+    border: 1px solid rgba(255,139,106,0.3);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 0 0 4px;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+  }
+  .beta-banner-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--give);
+    border: 1px solid rgba(255,139,106,0.45);
+    border-radius: 4px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+  }
+  .beta-banner a { color: var(--get); text-decoration: underline; }
+  .chain-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 1.3px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--get);
+    border: 1px solid rgba(56,212,245,0.35);
+    background: rgba(56,212,245,0.06);
+    border-radius: 20px;
+    padding: 3px 10px 3px 8px;
+    margin-top: 5px;
+    width: fit-content;
+  }
+  .chain-badge .pulse-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--get);
+    box-shadow: 0 0 6px var(--get);
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
+  .wallet-status { display: flex; align-items: center; gap: 7px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--ink-dim); white-space: nowrap; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--get); box-shadow: 0 0 8px var(--get); flex-shrink: 0; }
+  .dot.off { background: rgba(243,241,234,0.25); box-shadow: none; }
+  #connectBtn {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  #connectBtn:hover { border-color: var(--get); color: var(--get); }
+
+  /* ---- Hero: deal ticket ---- */
+  .hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 12px 4px 44px;
+    margin-bottom: 8px;
+  }
+  .hero > div:first-child { flex: 1 1 380px; min-width: 280px; }
+  .ticket-wrap { flex: 0 1 340px; max-width: 340px; min-width: 220px; margin: 0 auto; }
+  .hero-eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    color: var(--get);
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 1.12;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+    max-width: 520px;
+    margin: 0;
+  }
+  .hero h1 em { font-style: normal; color: var(--get); }
+  .hero p {
+    color: var(--ink-dim);
+    font-size: 15.5px;
+    line-height: 1.65;
+    max-width: 440px;
+    margin: 12px 0 0;
+  }
+  .hero-tickertape {
+    margin-top: 26px;
+    overflow: hidden;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 9px 0;
+  }
+  .hero-tickertape .track {
+    display: flex;
+    gap: 34px;
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--ink-faint);
+    animation: ticker 16s linear infinite;
+    width: max-content;
+  }
+  .hero-tickertape .track span.on { color: var(--get); }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ---- The ticket stub visual ---- */
+  .ticket-wrap { position: relative; }
+  .ticket-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -30px;
+    background:
+      radial-gradient(ellipse 220px 180px at 30% 20%, rgba(255,139,106,0.22), transparent 65%),
+      radial-gradient(ellipse 220px 200px at 75% 85%, rgba(55,211,244,0.22), transparent 65%);
+    filter: blur(6px);
+    animation: glowShift 5s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes glowShift {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(6px,-8px) scale(1.05); }
+  }
+  .ticket {
+    background: linear-gradient(160deg, var(--surface-raised), var(--surface));
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 28px 26px;
+    transform: rotate(-3deg);
+    position: relative;
+    font-family: 'JetBrains Mono', monospace;
+    box-shadow:
+      0 0 0 1px rgba(148,190,255,0.06),
+      0 24px 60px -20px rgba(0,0,0,0.65),
+      0 0 46px -12px rgba(255,139,106,0.35),
+      0 0 60px -14px rgba(55,211,244,0.28);
+    animation: ticketFloat 6s ease-in-out infinite;
+    overflow: hidden;
+  }
+  @keyframes ticketFloat {
+    0%, 100% { transform: rotate(-3deg) translateY(0); }
+    50% { transform: rotate(-1.4deg) translateY(-8px); }
+  }
+  .ticket::before, .ticket::after {
+    content: "";
+    position: absolute;
+    width: 20px; height: 20px;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+  .ticket::before { left: -10px; }
+  .ticket::after { right: -10px; }
+  .ticket .sheen {
+    position: absolute;
+    top: -60%; left: -30%;
+    width: 60%; height: 220%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.09), transparent);
+    transform: rotate(18deg);
+    animation: sheenSweep 4.5s ease-in-out infinite;
+  }
+  @keyframes sheenSweep {
+    0% { left: -40%; }
+    45%, 100% { left: 130%; }
+  }
+  .ticket .stub-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-faint); letter-spacing: 1.5px; margin-bottom: 20px; font-weight: 600; }
+  .ticket .stub-trade { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 16px 0; border-top: 1px dashed var(--line-strong); border-bottom: 1px dashed var(--line-strong); }
+  .ticket .stub-amt { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
+  .ticket .stub-amt.give { color: var(--give); text-shadow: 0 0 22px rgba(255,139,106,0.55); }
+  .ticket .stub-amt.get { color: var(--get); text-shadow: 0 0 22px rgba(55,211,244,0.55); }
+  .ticket .stub-unit { font-size: 10px; color: var(--ink-faint); display: block; margin-top: 3px; font-weight: 500; letter-spacing: 0.5px; }
+  .ticket .stub-arrow { color: var(--ink-faint); font-size: 18px; animation: arrowPulse 2s ease-in-out infinite; }
+  @keyframes arrowPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .ticket .stub-stamp {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .ticket .stub-stamp span {
+    border: 2px solid var(--get);
+    color: var(--get);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 5px 16px;
+    border-radius: 3px;
+    transform: rotate(2deg);
+    box-shadow: 0 0 18px rgba(55,211,244,0.4), inset 0 0 10px rgba(55,211,244,0.15);
+    animation: stampPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes stampPulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(55,211,244,0.4), inset 0 0 10px rgba(55,211,244,0.15); }
+    50% { box-shadow: 0 0 30px rgba(55,211,244,0.65), inset 0 0 14px rgba(55,211,244,0.25); }
+  }
+
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 13px 22px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.15s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--get); color: #08110a; }
+  .btn-primary:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--get-dim); }
+  .btn-outline { background: transparent; border: 1px solid var(--line-strong); color: var(--ink); }
+  .btn-outline:hover:not(:disabled) { border-color: var(--ink-dim); }
+  .btn-danger { background: transparent; border: 1px solid rgba(255,92,92,0.35); color: var(--danger); }
+  .btn-danger:hover:not(:disabled) { background: var(--danger-dim); }
+  .btn-full { width: 100%; }
+  .btn-sm { padding: 8px 14px; font-size: 12px; border-radius: 6px; }
+
+  /* ---- Stat bar ---- */
+  .stat-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+  .stat-cell { padding: 16px 20px; border-right: 1px solid var(--line); }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .label { font-size: 10.5px; letter-spacing: 1px; color: var(--ink-faint); font-family: 'JetBrains Mono', monospace; }
+  .stat-cell .value { font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 600; margin-top: 5px; color: var(--ink); }
+  .stat-cell .value.dim { color: var(--ink-faint); font-size: 14px; font-weight: 500; }
+
+  /* ---- Panels ---- */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 20px; align-items: start; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 26px;
+  }
+  .panel h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 21px;
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  /* ---- Form elements ---- */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-dim); margin-bottom: 6px; font-weight: 500; }
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 11px 13px;
+    border-radius: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--get); }
+  .field .hint { font-size: 11px; color: var(--ink-faint); margin-top: 5px; font-family: 'Inter', sans-serif; line-height: 1.5; }
+  .field .hint.success { color: var(--get); }
+  .field .hint.error { color: var(--give); }
+
+  .ghost-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .ghost-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .ghost-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .rpc-status-list { display: flex; flex-direction: column; gap: 8px; }
+  .rpc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+  }
+  .rpc-row .rpc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--ink-faint); }
+  .rpc-row.up .rpc-dot { background: var(--get); box-shadow: 0 0 6px var(--get); }
+  .rpc-row.down .rpc-dot { background: var(--give); }
+  .rpc-row.checking .rpc-dot { background: var(--private); animation: arrowPulse 1.2s ease-in-out infinite; }
+  .rpc-row .rpc-url { color: var(--ink); flex: 1; word-break: break-all; }
+  .rpc-row .rpc-latency { color: var(--ink-faint); font-size: 11px; white-space: nowrap; }
+  .rpc-row.active { border-color: rgba(55,211,244,0.4); }
+  .rpc-row .rpc-active-tag {
+    font-size: 9.5px; letter-spacing: 1px; color: var(--get);
+    border: 1px solid rgba(55,211,244,0.4); border-radius: 4px; padding: 1px 6px; white-space: nowrap;
+  }
+  #rpcDivergenceSummary.rpc-divergence-ok { color: var(--get); }
+  #rpcDivergenceSummary.rpc-divergence-warn {
+    color: var(--give); background: var(--give-dim); border: 1px solid rgba(255,139,106,0.3);
+    border-radius: 6px; padding: 8px 10px; line-height: 1.6;
+  }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .direction-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .direction-toggle button {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    padding: 12px 10px;
+    border-radius: 7px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .direction-toggle button.active#dirGiveNative { border-color: var(--give); color: var(--give); background: var(--give-dim); }
+  .direction-toggle button.active#dirGiveToken { border-color: var(--get); color: var(--get); background: var(--get-dim); }
+
+  .status-msg { font-size: 13px; color: var(--ink-dim); margin-top: 12px; min-height: 18px; font-family: 'Inter', sans-serif; }
+  .status-msg.error { color: var(--danger); }
+  .status-msg.success { color: var(--get); }
+
+  /* ---- Offer list ---- */
+  .offer-list { display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
+  .offer-card {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--ink-faint);
+    border-radius: 8px;
+    padding: 15px 17px;
+    background: var(--surface-raised);
+  }
+  .offer-card.dir-give-native { border-left-color: var(--give); }
+  .offer-card.dir-give-token { border-left-color: var(--get); }
+  .offer-card .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
+  .offer-id { font-size: 11px; color: var(--ink-faint); font-family: 'JetBrains Mono', monospace; }
+  .offer-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+    padding: 3px 9px; border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .offer-badge.open { background: var(--get-dim); color: var(--get); border: 1px solid rgba(186,255,92,0.3); }
+  .offer-badge.filled { background: rgba(255,255,255,0.07); color: var(--ink-dim); border: 1px solid var(--line); }
+  .offer-badge.cancelled { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,92,92,0.3); }
+  .offer-trade { font-family: 'JetBrains Mono', monospace; font-size: 14.5px; font-weight: 600; margin-bottom: 7px; }
+  .offer-trade .give-amt { color: var(--give); }
+  .offer-trade .get-amt { color: var(--get); }
+  .offer-trade .arrow { color: var(--ink-faint); margin: 0 8px; }
+  .offer-meta { font-size: 12px; color: var(--ink-faint); }
+  .token-tag { display: inline-flex; align-items: center; gap: 5px; }
+  .token-tag code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: var(--ink-faint); cursor: help; }
+  .token-tag .copy-btn {
+    background: none; border: 1px solid var(--line); color: var(--ink-faint);
+    font-size: 11px; line-height: 1; padding: 2px 5px; border-radius: 4px;
+    cursor: pointer; font-family: inherit;
+  }
+  .token-tag .copy-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .offer-meta .private-tag { color: var(--private); }
+  .offer-actions { margin-top: 12px; display: flex; gap: 8px; }
+  .gallery-empty { color: var(--ink-faint); font-size: 13px; padding: 30px 0; text-align: center; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab-btn {
+    background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+    padding: 8px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .tab-btn.active { border-color: var(--private); color: var(--private); background: var(--private-dim); }
+
+  .value .price-change { font-size: 11px; margin-left: 6px; font-weight: 500; }
+  .value .price-change.up { color: var(--get); }
+  .value .price-change.down { color: var(--danger); }
+
+  /* ---- Recent activity chart ---- */
+  .chart-panel { margin-bottom: 20px; }
+  .chart-panel .top-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; }
+  .chart-panel .vol-total { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-faint); }
+  .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 2px; }
+  .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; }
+  .chart-bar {
+    width: 100%;
+    max-width: 34px;
+    border-radius: 3px 3px 0 0;
+    background: var(--get);
+    min-height: 3px;
+    transition: opacity 0.15s ease;
+  }
+  .chart-bar:hover { opacity: 0.75; }
+  .chart-bar-wrap .bar-label {
+    font-size: 9.5px; color: var(--ink-faint); font-family: 'JetBrains Mono', monospace;
+    margin-top: 6px; white-space: nowrap;
+  }
+  .chart-bar-wrap .bar-tooltip {
+    position: absolute; bottom: 100%; margin-bottom: 6px;
+    background: var(--surface-raised); border: 1px solid var(--line-strong);
+    padding: 4px 8px; border-radius: 5px; font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace; color: var(--ink);
+    white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
+  }
+  .chart-bar-wrap:hover .bar-tooltip { opacity: 1; }
+
+  footer { text-align: center; color: var(--ink-faint); font-size: 12px; margin-top: 40px; font-family: 'JetBrains Mono', monospace; }
+
+  @media (max-width: 860px) {
+    .hero { flex-direction: column; align-items: stretch; }
+    .ticket-wrap { max-width: 100%; margin: 0; }
+    .ticket { transform: none; margin-top: 20px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .stat-bar { grid-template-columns: repeat(2, 1fr); }
+    .stat-cell:nth-child(5) { grid-column: 1 / -1; border-right: none; border-top: 1px solid var(--line); }
+    .hero h1 { font-size: 34px; }
+    .brand .name { flex-wrap: wrap; }
+    header { flex-wrap: wrap; row-gap: 14px; }
+    .header-right { width: 100%; justify-content: space-between; }
+    .ticket-wrap::before { inset: -14px; }
+    .ticket .sheen { display: none; }
+    .ticket { padding: 16px 18px; border-radius: 8px; }
+    .ticket .stub-row { margin-bottom: 10px; }
+    .ticket .stub-trade { padding: 8px 0; gap: 10px; }
+    .ticket .stub-amt { font-size: 20px; }
+    .ticket .stub-unit { font-size: 8.5px; margin-top: 1px; }
+    .ticket .stub-stamp { margin-top: 10px; }
+    .ticket .stub-stamp span { padding: 3px 12px; font-size: 10px; letter-spacing: 2px; }
+    @keyframes ticketFloat { 0%, 100% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(0deg) translateY(-4px); } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="mark">⇄</div>
+      <div>
+        <div class="name"><span class="name-text">Handshake</span><span class="name-sub">OTC ESCROW</span></div>
+        <div class="chain-badge"><span class="pulse-dot"></span>ON CHAIN 1404</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="wallet-status">
+        <span class="dot off" id="statusDot"></span>
+        <span id="statusText">not connected</span>
+      </div>
+      <button id="connectBtn">Connect wallet</button>
+    </div>
+  </header>
+
+  <div class="beta-banner">
+    <span class="beta-banner-tag">BETA</span>
+    Experimental software on an early-stage chain. Source is published but not independently audited — start with small amounts. <a href="#faq-audit" onclick="document.getElementById('faq-audit').scrollIntoView({behavior:'smooth'}); return false;">Read more</a>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">PEER-TO-PEER · NON-CUSTODIAL</div>
+      <h1>Trade hand to hand,<br><em>not order to order.</em></h1>
+      <p>Lock BDAG or a token in escrow, name your price, and let anyone — or one specific address — fill it. Funds move atomically or not at all. Cancel anytime before it's taken.</p>
+      <div class="hero-tickertape">
+        <div class="track">
+          <span class="on">LOCK</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
+          <span class="on">LOCK</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
+        </div>
+      </div>
+    </div>
+    <div class="ticket-wrap">
+    <div class="ticket">
+      <div class="sheen"></div>
+      <div class="stub-row"><span>DEAL TICKET</span><span>NON-CUSTODIAL</span></div>
+      <div class="stub-trade">
+        <div>
+          <div class="stub-amt give">1,000<span class="stub-unit">BDAG · GIVE</span></div>
+        </div>
+        <div class="stub-arrow">⇄</div>
+        <div>
+          <div class="stub-amt get">250<span class="stub-unit">TOKEN · GET</span></div>
+        </div>
+      </div>
+      <div class="stub-stamp"><span>OPEN</span></div>
+    </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <h3 style="margin-bottom:12px;">What Handshake does</h3>
+    <p style="color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0 0 16px; max-width: 780px;">
+      Handshake is a peer-to-peer, non-custodial escrow contract on chain 1404. Anyone can lock up
+      <span style="color:var(--give)">BDAG</span> or any <span style="color:var(--get)">ERC-20 token</span> and post it as
+      an open offer; a counterparty fills it and both assets change hands in one atomic transaction — either the full
+      trade settles, or nothing moves at all. There's no pooled liquidity, no order book matching engine, and no
+      intermediary ever holding funds — the contract itself is the only escrow.
+    </p>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">TWO-WAY OFFERS</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Give BDAG for a token, or give a token for BDAG — either direction, same contract.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">PRIVATE OR OPEN</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Restrict a deal to one specific wallet, or leave it open for anyone to fill.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">CANCEL ANYTIME</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Makers can pull an open offer back before it's filled — no lockup beyond that.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">LIVE MARKET DATA</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Real-time BDAG/USD price, total offers, protocol fee, and your wallet/network status at a glance.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">ON-CHAIN HISTORY</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Recent fills are read straight from contract events — nothing cached, nothing off-chain.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">ANY ERC-20 PAIR</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Not limited to one token — trade BDAG against any ERC-20 contract on chain 1404. Nothing is vetted, so verify a token yourself before trusting it.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-bar">
+    <div class="stat-cell">
+      <div class="label">bdag / usd</div>
+
+      <div class="value" id="statPrice">—</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">total offers</div>
+      <div class="value" id="statTotal">—</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">protocol fee</div>
+      <div class="value" id="statFee">—</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">wallet</div>
+      <div class="value dim" id="statWallet">not connected</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">network</div>
+      <div class="value dim" id="statNetwork">—</div>
+    </div>
+  </div>
+
+  <div class="panel chart-panel">
+    <div class="top-row">
+      <h3 style="margin:0;">Recent fills</h3>
+      <span class="vol-total" id="chartVolTotal"></span>
+    </div>
+    <div class="chart-bars" id="chartBars">
+      <div class="gallery-empty" style="width:100%;">Connect your wallet to see trade history.</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h3>New offer</h3>
+
+      <div class="direction-toggle">
+        <button class="active" id="dirGiveNative" type="button">I give BDAG, want token</button>
+        <button id="dirGiveToken" type="button">I give token, want BDAG</button>
+      </div>
+
+      <div class="field" id="tokenAddrField">
+        <label>ERC-20 token address</label>
+        <input type="text" id="tokenAddrInput" placeholder="0x...">
+        <div class="hint">
+          The token's <strong>contract address</strong> on chain 1404 — not your wallet address, and not the token's
+          ticker or name. Find it on the token's official website, its CoinGecko/CoinMarketCap page (look for
+          "Contract"), or a chain 1404 block explorer. Double-check it's the contract on <em>this</em> chain — the
+          same token on a different chain will have a different address and won't work here.
+        </div>
+        <div class="hint" id="tokenSymbolHint"></div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label id="amountNativeLabel">BDAG amount (you give)</label>
+          <input type="text" id="amountNativeInput" placeholder="0.0">
+        </div>
+        <div class="field">
+          <label id="amountTokenLabel">Token amount (you want)</label>
+          <input type="text" id="amountTokenInput" placeholder="0.0">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Restrict to a specific address (optional)</label>
+        <input type="text" id="takerInput" placeholder="0x... — leave blank to allow anyone">
+      </div>
+
+      <button class="btn btn-primary btn-full" id="createBtn">Create offer</button>
+      <div class="status-msg" id="createStatus"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Offers</h3>
+      <div class="tabs">
+        <button class="tab-btn active" id="tabAll" type="button">All open</button>
+        <button class="tab-btn" id="tabMine" type="button">My offers</button>
+      </div>
+      <button class="btn btn-outline btn-sm" id="refreshBtn" style="margin-bottom:14px;">Refresh</button>
+      <div class="offer-list" id="offerList">
+        <div class="gallery-empty">Connect your wallet to load offers.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <h3>FAQ</h3>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">Does this only work if both sides use the same currency?</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        No — escrow doesn't require a matching currency on both sides. Every offer here already pairs two different
+        assets: <span style="color:var(--give)">BDAG</span> on one side and any
+        <span style="color:var(--get)">ERC-20 token</span> on the other. Just like modern cross-border escrow isn't
+        limited to a single currency, this contract locks one asset and releases it only when the counter-asset is
+        delivered — atomically, in the same transaction — so mismatched pairs settle just as safely as identical ones.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">Is "any ERC-20" actually safe to trust?</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        Handshake doesn't vet, allowlist, or restrict which ERC-20 contracts it accepts — it locks and releases
+        whatever token address you or a counterparty enters. That flexibility cuts both ways: a non-standard or
+        deliberately malicious token contract could report a successful transfer without behaving the way a normal
+        token would. The live check under the token address field confirms a contract exists and returns a
+        symbol/decimals — it does not confirm the token is trustworthy. Only trade tokens you've independently
+        verified yourself.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0;" id="faq-audit">
+      <label style="font-size:13px; color: var(--ink);">Has this contract been audited?</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        No. The contract source is published and verifiable on-chain, which confirms the deployed bytecode matches
+        published source — that is a transparency check, not a security audit. Handshake is experimental, beta
+        software running on an early-stage chain. Treat every offer as something you could lose, and start with
+        amounts you're fully comfortable putting at risk.
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
+      <h3 style="margin-bottom:0;">RPC status</h3>
+      <button type="button" id="rpcCheckBtn" class="ghost-btn">Check now</button>
+    </div>
+    <p style="font-size:12px; color: var(--ink-faint); margin: 4px 0 14px; line-height:1.6;">
+      Checked live, from your own browser, against each RPC below — not borrowed from a third-party leaderboard.
+      Handshake automatically falls back to the next entry if one fails. This also cross-checks whether the
+      responding RPCs agree on recent block hashes — chain 1404 has documented, actively-discussed disagreement
+      between different node operators about which chain history is canonical. This check can only tell you
+      whether these specific RPCs agree with each other, not which side (if any) is correct.
+    </p>
+    <div id="rpcDivergenceSummary" style="font-size:12px; margin-bottom:12px;"></div>
+    <div id="rpcStatusList" class="rpc-status-list"></div>
+  </div>
+
+  <footer>
+    handshake · otc escrow · non-custodial · beta software, unaudited · verify contract source before trading · not financial advice
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
+<script>
+  // ---------------------------------------------------------------------
+  // CONFIG — fill these in after you deploy the contract
+  // ---------------------------------------------------------------------
+  const CONTRACT_ADDRESS = "0x8F5EB87AC09cE1067D0e1855852e6454775BA808"; // v2 — fee locked at creation + nonReentrant on createOfferGivingToken
+  const CHAIN_ID_DEC = 1404;
+  const CHAIN_ID_HEX = "0x57c"; // 1404 in hex
+  const NETWORK_NAME = "BlockDAG (Chain 1404)";
+  // NOTE: this is a third-party community RPC fork (WelshDAG), used because BlockDAG's
+  // own rpc.bdagscan.com was returning 403s for non-browser requests at time of setup.
+  // A malicious or unreliable RPC can misreport balances/gas/tx status to the wallet's
+  // confirmation dialogs before a user signs — treat this as a trust decision, not
+  // interchangeable plumbing. Re-verify before scaling up real usage.
+  // Ordered by observed reliability (sync %, uptime, latency), with welshdag.trade
+  // bumped to 2nd based on direct hands-on testing working well — a reminder that
+  // this list is a living ranking, not a one-time verdict.
+  const RPC_URLS = [
+    "https://rpc.bdagexplorer.com",
+    "https://rpc.welshdag.trade",
+    "https://rpc.cms-mining-pool.net",
+    "https://rpc.dvdmining.com",
+    "https://rms-bdag-rpc.de/api/rpc-live",
+    "https://rpc.capedag.com",
+    "https://rpc.west.bdag-us.org",
+  ];
+  const NATIVE_SYMBOL = "BDAG";
+
+  const CONTRACT_ABI = [
+    "function createOfferGivingNative(address token, uint256 amountToken, address taker) payable returns (uint256)",
+    "function createOfferGivingToken(address token, uint256 amountToken, uint256 amountNative, address taker) returns (uint256)",
+    "function fillOfferGivingToken(uint256 id)",
+    "function fillOfferGivingNative(uint256 id) payable",
+    "function cancelOffer(uint256 id)",
+    "function totalOffers() view returns (uint256)",
+    "function feeBps() view returns (uint16)",
+    "function getOffer(uint256 id) view returns (address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint16 feeBpsAtCreation)",
+    "event OfferCreated(uint256 indexed id, address indexed maker, address indexed token, bool makerGivesNative)",
+    "event OfferFilled(uint256 indexed id, address indexed taker)",
+    "event OfferCancelled(uint256 indexed id)"
+  ];
+  // NOTE: the event signatures above are a best guess (this ABI is hand-written, not
+  // generated from your contract's source/artifact). They're enough to make
+  // `contract.filters.OfferFilled` exist, which fixes the "is not a function" crash.
+  // But if the real event's parameter types/order differ, queryFilter will silently
+  // return zero matches instead of erroring. If "Recent fills" still comes back empty
+  // after this fix even though fills exist, paste your contract's actual `event
+  // OfferFilled(...)` line (from the source or the ABI json) and I'll correct it exactly.
+
+  const ERC20_ABI = [
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function balanceOf(address owner) view returns (uint256)",
+    "function decimals() view returns (uint8)",
+    "function symbol() view returns (string)"
+  ];
+
+  // ---- Read-side RPC fallback ----
+  // Deliberately NOT using ethers' FallbackProvider here: its default behavior
+  // tries to reconcile/quorum across providers, and if our RPCs ever disagree
+  // (this chain has real reports of divergent forks sharing the same chain ID)
+  // that reconciliation is exactly what produces an unhelpful "could not
+  // coalesce error." Instead: probe RPCs in order, stick with the first one
+  // that responds, and if a call fails mid-flight, re-probe and retry once.
+  // This only ever affects reads (offers, history, stats, token lookups) —
+  // every signed transaction still goes through the connected wallet's own
+  // provider, as it must.
+  const rpcProviderCache = new Map();
+  function getRpcProvider(url) {
+    if (!rpcProviderCache.has(url)) {
+      rpcProviderCache.set(url, new ethers.JsonRpcProvider(url, { chainId: CHAIN_ID_DEC, name: "chain1404" }, { staticNetwork: true }));
+    }
+    return rpcProviderCache.get(url);
+  }
+
+  let activeReadProvider = null;
+  let activeReadProviderAt = 0;
+  const READ_PROVIDER_TTL = 60000; // re-probe at most once a minute unless a call fails
+
+  async function pingProvider(p, timeoutMs = 4000) {
+    return await Promise.race([
+      p.getBlockNumber(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("RPC ping timeout")), timeoutMs)),
+    ]);
+  }
+
+  async function getHealthyReadProvider(forceRecheck = false) {
+    const now = Date.now();
+    if (!forceRecheck && activeReadProvider && (now - activeReadProviderAt) < READ_PROVIDER_TTL) {
+      return activeReadProvider;
+    }
+    let lastErr;
+    for (const url of RPC_URLS) {
+      try {
+        const p = getRpcProvider(url);
+        await pingProvider(p);
+        activeReadProvider = p;
+        activeReadProviderAt = now;
+        return p;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error("All configured RPCs are currently unreachable.");
+  }
+
+  // Run fn(provider) against a healthy RPC; on failure, re-probe for a
+  // different healthy one and try exactly once more before giving up.
+  async function withReadFallback(fn) {
+    const p1 = await getHealthyReadProvider();
+    try {
+      return await fn(p1);
+    } catch (e) {
+      const p2 = await getHealthyReadProvider(true);
+      if (p2 === p1) throw e; // no other RPC came back healthy — surface the original error
+      return await fn(p2);
+    }
+  }
+
+  function getReadContract(p) {
+    return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
+  }
+
+  // Cache token symbol/decimals per address so we're not re-fetching on every
+  // render or refresh — and so offer cards can show "2.0 XYZ" instead of a
+  // raw base-unit integer next to a truncated, unverifiable address.
+  const tokenMetaCache = new Map();
+  async function getTokenMeta(address) {
+    const key = address.toLowerCase();
+    if (tokenMetaCache.has(key)) return tokenMetaCache.get(key);
+    let meta = { symbol: "TOKEN", decimals: 18 };
+    try {
+      const [symbol, decimals] = await withReadFallback(async (p) => {
+        const token = new ethers.Contract(address, ERC20_ABI, p);
+        return Promise.all([
+          token.symbol().catch(() => "TOKEN"),
+          token.decimals().catch(() => 18),
+        ]);
+      });
+      meta = { symbol, decimals: Number(decimals) };
+    } catch (e) { /* keep fallback */ }
+    tokenMetaCache.set(key, meta);
+    return meta;
+  }
+
+  function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
+  }
+  window.copyToClipboard = copyToClipboard;
+
+  const STATUS_LABEL = ["None", "Open", "Filled", "Cancelled"];
+
+  let provider, signer, userAddress, contract;
+  let direction = "giveNative"; // or "giveToken"
+  let currentTab = "all";
+
+  function friendlyError(err) {
+    const raw = err?.reason || err?.shortMessage || err?.message || String(err);
+    if (raw.includes("user rejected")) return "You rejected the transaction.";
+    if (raw.includes("insufficient funds")) return "Insufficient funds for this transaction.";
+    if (raw.includes("not open")) return "This offer is no longer open.";
+    if (raw.includes("not your offer")) return "You are not the counterparty for this offer.";
+    if (raw.includes("wrong BDAG amount")) return "Sent BDAG amount doesn't match the offer.";
+    if (raw.includes("could not coalesce error") || raw.includes("missing response")) {
+      return "The chain 1404 RPC didn't return a usable response for that query — it may be overloaded or rate-limiting. Try refreshing in a moment.";
+    }
+    if (raw.includes("missing revert data") || err?.code === "CALL_EXCEPTION") {
+      return "The contract rejected this transaction, but the RPC didn't send back a reason why. Common causes: your token balance/allowance doesn't actually cover the amount, or an offer parameter isn't valid. Double-check those, and try again — if it keeps happening, the RPC your wallet is using may not return revert reasons.";
+    }
+    if (raw.includes("could not decode result data") || err?.code === "BAD_DATA") {
+      return "That address doesn't look like a live token contract on chain 1404 — double check it and make sure your wallet is on the right network.";
+    }
+    return raw.length > 140 ? raw.slice(0, 140) + "…" : raw;
+  }
+
+  async function ensureCorrectNetwork() {
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== CHAIN_ID_DEC) {
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: CHAIN_ID_HEX }],
+        });
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: CHAIN_ID_HEX,
+              chainName: NETWORK_NAME,
+              nativeCurrency: { name: NATIVE_SYMBOL, symbol: NATIVE_SYMBOL, decimals: 18 },
+              rpcUrls: RPC_URLS,
+            }],
+          });
+        } else {
+          throw switchError;
+        }
+      }
+    }
+  }
+
+  document.getElementById("connectBtn").addEventListener("click", async () => {
+    if (!window.ethereum) { alert("No wallet found. Install MetaMask or a similar browser wallet."); return; }
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    await ensureCorrectNetwork();
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
+    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+    document.getElementById("connectBtn").textContent = userAddress.slice(0,6) + "…" + userAddress.slice(-4);
+    document.getElementById("statusDot").classList.remove("off");
+    document.getElementById("statusText").textContent = "connected";
+    document.getElementById("statWallet").textContent = userAddress.slice(0,6) + "…" + userAddress.slice(-4);
+    document.getElementById("statWallet").classList.remove("dim");
+    document.getElementById("statNetwork").textContent = NETWORK_NAME;
+    document.getElementById("statNetwork").classList.remove("dim");
+
+    refreshStats();
+    loadOffers();
+    loadTradeHistory();
+  });
+
+  // ---- BDAG/USD price (off-chain, informational only — never used by the contract) ----
+  const COINGECKO_ID = "blockdag";
+  async function loadPrice() {
+    const el = document.getElementById("statPrice");
+    try {
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${COINGECKO_ID}&vs_currencies=usd&include_24hr_change=true`);
+      const data = await res.json();
+      const info = data[COINGECKO_ID];
+      if (!info) { el.textContent = "n/a"; return; }
+      const price = info.usd;
+      const change = info.usd_24h_change;
+      const priceStr = price < 0.01 ? price.toFixed(6) : price.toFixed(4);
+      const changeStr = change === undefined ? "" :
+        `<span class="price-change ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(1)}%</span>`;
+      el.innerHTML = `$${priceStr}${changeStr}`;
+    } catch (e) {
+      el.textContent = "n/a";
+    }
+  }
+  loadPrice();
+  setInterval(loadPrice, 60000);
+
+  // ---- Recent fills chart, built from this contract's own OfferFilled events ----
+  // ---- Fetch logs in bounded chunks instead of genesis-to-latest in one shot.
+  // Public RPCs cap how many blocks a single eth_getLogs can span; blowing past
+  // that cap is what was producing the raw "could not coalesce error" before.
+  async function getLogsChunked(filterName, { needed = 15, chunkSize = 5000, maxLookback = 500000 } = {}) {
+    const latest = await withReadFallback(p => p.getBlockNumber());
+    let toBlock = latest;
+    let scanned = 0;
+    let size = chunkSize;
+    const found = [];
+
+    while (toBlock >= 0 && scanned < maxLookback && found.length < needed) {
+      const fromBlock = Math.max(0, toBlock - size + 1);
+      try {
+        const chunk = await withReadFallback(p => {
+          const c = getReadContract(p);
+          return c.queryFilter(c.filters[filterName](), fromBlock, toBlock);
+        });
+        found.unshift(...chunk);
+        scanned += (toBlock - fromBlock + 1);
+        toBlock = fromBlock - 1;
+        size = chunkSize; // reset after a success
+      } catch (e) {
+        if (size > 250) {
+          size = Math.floor(size / 2); // this chunk was too big for the RPC(s) — try smaller
+        } else {
+          // even a small range failed on every configured RPC — skip it rather than fail the whole history
+          scanned += (toBlock - fromBlock + 1);
+          toBlock = fromBlock - 1;
+          size = chunkSize;
+        }
+      }
+    }
+    return found;
+  }
+
+  async function loadTradeHistory() {
+    const barsEl = document.getElementById("chartBars");
+    const volEl = document.getElementById("chartVolTotal");
+    if (!contract) { barsEl.innerHTML = '<div class="gallery-empty" style="width:100%;">Connect your wallet to see trade history.</div>'; return; }
+
+    barsEl.innerHTML = '<div class="gallery-empty" style="width:100%;">Reading fill history from the chain…</div>';
+    try {
+      const events = await getLogsChunked("OfferFilled", { needed: 15, chunkSize: 5000, maxLookback: 500000 });
+      const recent = events.slice(-15); // last 15 fills, oldest to newest
+
+      if (recent.length === 0) {
+        barsEl.innerHTML = '<div class="gallery-empty" style="width:100%;">No fills yet — recent trades will show up here.</div>';
+        volEl.textContent = "";
+        return;
+      }
+
+      const trades = [];
+      for (const ev of recent) {
+        try {
+          const o = await contract.getOffer(ev.args.id);
+          trades.push({ id: ev.args.id.toString(), amountNative: o.amountNative });
+        } catch (e) { /* skip a trade we can't read */ }
+      }
+
+      const maxAmt = trades.reduce((m, t) => t.amountNative > m ? t.amountNative : m, 0n);
+      const totalAmt = trades.reduce((sum, t) => sum + t.amountNative, 0n);
+
+      barsEl.innerHTML = trades.map(t => {
+        const amtStr = ethers.formatEther(t.amountNative);
+        const heightPct = maxAmt > 0n ? Number((t.amountNative * 100n) / maxAmt) : 0;
+        return `
+          <div class="chart-bar-wrap">
+            <div class="bar-tooltip">${parseFloat(amtStr).toFixed(4)} ${NATIVE_SYMBOL}</div>
+            <div class="chart-bar" style="height:${Math.max(heightPct, 2)}%"></div>
+            <div class="bar-label">#${t.id}</div>
+          </div>
+        `;
+      }).join("");
+
+      volEl.textContent = `${parseFloat(ethers.formatEther(totalAmt)).toFixed(2)} ${NATIVE_SYMBOL} across last ${trades.length} fills`;
+    } catch (err) {
+      barsEl.innerHTML = `<div class="gallery-empty" style="width:100%;">Could not load history: ${friendlyError(err)}</div>`;
+    }
+  }
+
+  async function refreshStats() {
+    try {
+      const [total, fee] = await withReadFallback(p => {
+        const c = getReadContract(p);
+        return Promise.all([c.totalOffers(), c.feeBps()]);
+      });
+      document.getElementById("statTotal").textContent = total.toString();
+      document.getElementById("statFee").textContent = (Number(fee) / 100).toFixed(2) + "%";
+    } catch (e) { /* nice-to-have, fail quietly */ }
+  }
+
+  // ---- Direction toggle ----
+  const dirGiveNativeBtn = document.getElementById("dirGiveNative");
+  const dirGiveTokenBtn = document.getElementById("dirGiveToken");
+  const amountNativeLabel = document.getElementById("amountNativeLabel");
+  const amountTokenLabel = document.getElementById("amountTokenLabel");
+
+  function setDirection(d) {
+    direction = d;
+    dirGiveNativeBtn.classList.toggle("active", d === "giveNative");
+    dirGiveTokenBtn.classList.toggle("active", d === "giveToken");
+    if (d === "giveNative") {
+      amountNativeLabel.textContent = "BDAG amount (you give)";
+      amountTokenLabel.textContent = "Token amount (you want)";
+    } else {
+      amountNativeLabel.textContent = "BDAG amount (you want)";
+      amountTokenLabel.textContent = "Token amount (you give)";
+    }
+  }
+  dirGiveNativeBtn.addEventListener("click", () => setDirection("giveNative"));
+  dirGiveTokenBtn.addEventListener("click", () => setDirection("giveToken"));
+
+  // ---- Live feedback under the token address field, so people know their
+  // input was actually understood before they commit to creating an offer ----
+  const tokenSymbolHint = document.getElementById("tokenSymbolHint");
+  let tokenCheckSeq = 0;
+  document.getElementById("tokenAddrInput").addEventListener("input", async (e) => {
+    const val = e.target.value.trim();
+    const seq = ++tokenCheckSeq; // guard against a slower earlier check overwriting a newer one
+
+    if (!val) { tokenSymbolHint.textContent = ""; tokenSymbolHint.className = "hint"; return; }
+    if (!ethers.isAddress(val)) {
+      tokenSymbolHint.textContent = "That doesn't look like a valid address yet.";
+      tokenSymbolHint.className = "hint";
+      return;
+    }
+    if (!provider) {
+      tokenSymbolHint.textContent = "Connect your wallet to auto-check this address.";
+      tokenSymbolHint.className = "hint";
+      return;
+    }
+
+    tokenSymbolHint.textContent = "Checking this address on chain 1404…";
+    tokenSymbolHint.className = "hint";
+    try {
+      const code = await provider.getCode(val);
+      if (seq !== tokenCheckSeq) return; // a newer keystroke has already superseded this check
+      if (code === "0x") {
+        tokenSymbolHint.textContent = "⚠ No contract found at this address on chain 1404 — check the address and that you're on the right network.";
+        tokenSymbolHint.className = "hint error";
+        return;
+      }
+      const meta = await getTokenMeta(val);
+      if (seq !== tokenCheckSeq) return;
+      if (meta.symbol === "TOKEN") {
+        tokenSymbolHint.textContent = "⚠ Found a contract here, but it doesn't look like a standard ERC-20 token (no symbol/decimals). Proceed with caution.";
+        tokenSymbolHint.className = "hint error";
+      } else {
+        tokenSymbolHint.textContent = `✓ Found: ${meta.symbol} (${meta.decimals} decimals)`;
+        tokenSymbolHint.className = "hint success";
+      }
+    } catch (e) {
+      if (seq !== tokenCheckSeq) return;
+      tokenSymbolHint.textContent = "Couldn't verify this address right now.";
+      tokenSymbolHint.className = "hint";
+    }
+  });
+
+  // ---- Create offer ----
+  document.getElementById("createBtn").addEventListener("click", async () => {
+    const statusEl = document.getElementById("createStatus");
+    statusEl.className = "status-msg";
+    if (!contract) { statusEl.textContent = "Connect your wallet first."; return; }
+
+    const tokenAddr = document.getElementById("tokenAddrInput").value.trim();
+    const amountNativeStr = document.getElementById("amountNativeInput").value.trim();
+    const amountTokenStr = document.getElementById("amountTokenInput").value.trim();
+    const takerInput = document.getElementById("takerInput").value.trim();
+    const taker = takerInput || ethers.ZeroAddress;
+
+    if (!ethers.isAddress(tokenAddr)) { statusEl.textContent = "Enter a valid token address."; statusEl.className = "status-msg error"; return; }
+    if (!amountNativeStr || !amountTokenStr) { statusEl.textContent = "Enter both amounts."; statusEl.className = "status-msg error"; return; }
+    if (takerInput && !ethers.isAddress(takerInput)) { statusEl.textContent = "Restricted address isn't valid."; statusEl.className = "status-msg error"; return; }
+
+    const btn = document.getElementById("createBtn");
+    try {
+      btn.disabled = true;
+
+      const code = await provider.getCode(tokenAddr);
+      if (code === "0x") {
+        statusEl.textContent = "No contract found at that address on chain 1404 — check the address and network.";
+        statusEl.className = "status-msg error";
+        btn.disabled = false;
+        return;
+      }
+
+      const token = new ethers.Contract(tokenAddr, ERC20_ABI, signer);
+      const decimals = await token.decimals().catch(() => 18);
+      const amountNativeWei = ethers.parseEther(amountNativeStr);
+      const amountTokenUnits = ethers.parseUnits(amountTokenStr, decimals);
+
+      if (direction === "giveNative") {
+        const nativeBal = await provider.getBalance(userAddress);
+        if (nativeBal < amountNativeWei) {
+          statusEl.textContent = `You have ${ethers.formatEther(nativeBal)} ${NATIVE_SYMBOL}, but this offer needs ${amountNativeStr} ${NATIVE_SYMBOL} (plus gas). Lower the amount or fund your wallet first.`;
+          statusEl.className = "status-msg error";
+          btn.disabled = false;
+          return;
+        }
+        statusEl.textContent = "Confirm the transaction in your wallet…";
+        const tx = await contract.createOfferGivingNative(tokenAddr, amountTokenUnits, taker, { value: amountNativeWei });
+        statusEl.textContent = "Creating offer…";
+        await tx.wait();
+      } else {
+        const tokenBal = await token.balanceOf(userAddress).catch(() => null);
+        if (tokenBal !== null && tokenBal < amountTokenUnits) {
+          const meta = await getTokenMeta(tokenAddr);
+          statusEl.textContent = `You only hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}, but this offer needs ${amountTokenStr} ${meta.symbol}. Lower the amount or get more of the token first.`;
+          statusEl.className = "status-msg error";
+          btn.disabled = false;
+          return;
+        }
+        statusEl.textContent = "Approving token spend…";
+        const allowance = await token.allowance(userAddress, CONTRACT_ADDRESS);
+        if (allowance < amountTokenUnits) {
+          const approveTx = await token.approve(CONTRACT_ADDRESS, amountTokenUnits);
+          await approveTx.wait();
+        }
+        statusEl.textContent = "Confirm the offer transaction in your wallet…";
+        const tx = await contract.createOfferGivingToken(tokenAddr, amountTokenUnits, amountNativeWei, taker);
+        statusEl.textContent = "Creating offer…";
+        await tx.wait();
+      }
+
+      statusEl.textContent = "Offer created.";
+      statusEl.className = "status-msg success";
+      document.getElementById("amountNativeInput").value = "";
+      document.getElementById("amountTokenInput").value = "";
+      document.getElementById("takerInput").value = "";
+      refreshStats();
+      loadOffers();
+      loadTradeHistory();
+    } catch (err) {
+      statusEl.textContent = friendlyError(err);
+      statusEl.className = "status-msg error";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- Tabs ----
+  document.getElementById("tabAll").addEventListener("click", () => switchTab("all"));
+  document.getElementById("tabMine").addEventListener("click", () => switchTab("mine"));
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById("tabAll").classList.toggle("active", tab === "all");
+    document.getElementById("tabMine").classList.toggle("active", tab === "mine");
+    loadOffers();
+  }
+  document.getElementById("refreshBtn").addEventListener("click", () => { loadOffers(); loadTradeHistory(); });
+
+  // Reads no longer depend on a connected wallet — show live data immediately
+  // so visitors can browse before deciding to connect.
+  refreshStats();
+  loadOffers();
+  loadTradeHistory();
+
+  // ---- Live RPC status panel — checks each RPC directly from this browser ----
+  function shortRpcLabel(url) {
+    return url.replace(/^https?:\/\//, "");
+  }
+
+  async function checkAllRpcs() {
+    const listEl = document.getElementById("rpcStatusList");
+    const summaryEl = document.getElementById("rpcDivergenceSummary");
+    const btn = document.getElementById("rpcCheckBtn");
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+    summaryEl.textContent = "";
+    summaryEl.className = "";
+
+    listEl.innerHTML = RPC_URLS.map(url => `
+      <div class="rpc-row checking" data-url="${url}">
+        <span class="rpc-dot"></span>
+        <span class="rpc-url">${shortRpcLabel(url)}</span>
+        <span class="rpc-latency">checking…</span>
+      </div>
+    `).join("");
+
+    const results = {}; // url -> { ok, blockNumber, ms }
+
+    await Promise.all(RPC_URLS.map(async (url) => {
+      const row = listEl.querySelector(`.rpc-row[data-url="${CSS.escape(url)}"]`);
+      const started = performance.now();
+      try {
+        const p = getRpcProvider(url);
+        const blockNumber = await pingProvider(p, 6000);
+        const ms = Math.round(performance.now() - started);
+        row.className = "rpc-row up";
+        row.querySelector(".rpc-latency").textContent = `${ms} ms`;
+        results[url] = { ok: true, blockNumber, ms };
+      } catch (e) {
+        row.className = "rpc-row down";
+        row.querySelector(".rpc-latency").textContent = "unreachable";
+        results[url] = { ok: false };
+      }
+    }));
+
+    // Tag whichever RPC is currently backing reads, if any check succeeded
+    if (activeReadProvider) {
+      const activeUrl = [...rpcProviderCache.entries()].find(([, p]) => p === activeReadProvider)?.[0];
+      if (activeUrl) {
+        const row = listEl.querySelector(`.rpc-row[data-url="${CSS.escape(activeUrl)}"]`);
+        if (row && row.classList.contains("up")) {
+          row.classList.add("active");
+          row.insertAdjacentHTML("beforeend", '<span class="rpc-active-tag">IN USE</span>');
+        }
+      }
+    }
+
+    // ---- Cross-check: do the responsive RPCs agree on chain history? ----
+    // This is the actual fork question, not just "is it up." Pick a block a
+    // few behind the slowest node's tip (so a barely-propagated block on a
+    // faster node doesn't look like a false disagreement) and compare hashes.
+    const upUrls = Object.keys(results).filter(u => results[u].ok);
+    if (upUrls.length >= 2) {
+      const refBlock = Math.min(...upUrls.map(u => results[u].blockNumber)) - 5;
+      if (refBlock > 0) {
+        summaryEl.textContent = "Cross-checking block hashes across responsive RPCs…";
+        try {
+          const hashes = await Promise.all(upUrls.map(async (url) => {
+            const block = await getRpcProvider(url).getBlock(refBlock);
+            return { url, hash: block?.hash };
+          }));
+          const uniqueHashes = new Set(hashes.map(h => h.hash));
+          if (uniqueHashes.size <= 1) {
+            summaryEl.textContent = `✓ All ${upUrls.length} responsive RPCs agree on block #${refBlock}'s hash.`;
+            summaryEl.className = "rpc-divergence-ok";
+          } else {
+            const groups = {};
+            hashes.forEach(h => { (groups[h.hash] = groups[h.hash] || []).push(shortRpcLabel(h.url)); });
+            const groupList = Object.entries(groups).map(([hash, urls]) => `${urls.join(", ")} → ${hash ? hash.slice(0,10)+"…" : "no block"}`).join(" | ");
+            summaryEl.innerHTML = `⚠ These RPCs do NOT agree on block #${refBlock} — they may be serving different chain forks: ${groupList}`;
+            summaryEl.className = "rpc-divergence-warn";
+          }
+        } catch (e) {
+          summaryEl.textContent = "Could not complete the block-hash cross-check this time.";
+        }
+      }
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Check now";
+  }
+
+  document.getElementById("rpcCheckBtn").addEventListener("click", checkAllRpcs);
+  checkAllRpcs();
+
+  // ---- Load & render offers ----
+  async function loadOffers() {
+    const listEl = document.getElementById("offerList");
+    if (currentTab === "mine" && !userAddress) {
+      listEl.innerHTML = '<div class="gallery-empty">Connect your wallet to see your offers.</div>';
+      return;
+    }
+
+    listEl.innerHTML = '<div class="gallery-empty">Loading offers from the chain…</div>';
+    try {
+      const total = Number(await withReadFallback(p => getReadContract(p).totalOffers()));
+      const rows = [];
+
+      for (let id = total; id >= 1 && rows.length < 30; id--) {
+        const o = await withReadFallback(p => getReadContract(p).getOffer(id));
+        const status = STATUS_LABEL[Number(o.status)] || "None";
+        if (status === "None") continue;
+
+        if (currentTab === "mine") {
+          const isMine = o.maker.toLowerCase() === userAddress.toLowerCase() ||
+                         o.taker.toLowerCase() === userAddress.toLowerCase();
+          if (!isMine) continue;
+        } else {
+          if (status !== "Open") continue;
+        }
+
+        rows.push({ id, o, status });
+      }
+
+      // Fetch each unique token's symbol/decimals once, in parallel, before rendering
+      const uniqueTokens = [...new Set(rows.map(r => r.o.token.toLowerCase()))];
+      await Promise.all(uniqueTokens.map(getTokenMeta));
+
+      const cards = rows.map(r => renderOfferCard(r.id, r.o, r.status, tokenMetaCache.get(r.o.token.toLowerCase())));
+
+      listEl.innerHTML = cards.length
+        ? cards.join("")
+        : '<div class="gallery-empty">Nothing here yet.</div>';
+
+      attachOfferActions();
+    } catch (err) {
+      listEl.innerHTML = `<div class="gallery-empty">Could not load offers: ${friendlyError(err)}</div>`;
+    }
+  }
+
+  function renderOfferCard(id, o, status, tokenMeta) {
+    const nativeAmt = ethers.formatEther(o.amountNative);
+    const meta = tokenMeta || { symbol: "TOKEN", decimals: 18 };
+    const tokenAmt = ethers.formatUnits(o.amountToken, meta.decimals);
+    const tokenShort = o.token.slice(0,6) + "…" + o.token.slice(-4);
+    const tokenTag = `<span class="token-tag" title="${o.token}">${meta.symbol} <code>${tokenShort}</code><button type="button" class="copy-btn" onclick="copyToClipboard('${o.token}', this)" title="Copy full address">⧉</button></span>`;
+    const dirClass = o.makerGivesNative ? "dir-give-native" : "dir-give-token";
+    const giveLabel = o.makerGivesNative
+      ? `<span class="give-amt">${nativeAmt} ${NATIVE_SYMBOL}</span><span class="arrow">⇄</span><span class="get-amt">${tokenAmt} ${tokenTag}</span>`
+      : `<span class="give-amt">${tokenAmt} ${tokenTag}</span><span class="arrow">⇄</span><span class="get-amt">${nativeAmt} ${NATIVE_SYMBOL}</span>`;
+
+    const isMaker = o.maker.toLowerCase() === (userAddress || "").toLowerCase();
+    const isRestricted = o.taker !== ethers.ZeroAddress;
+    const canFill = status === "Open" && !isMaker && (!isRestricted || o.taker.toLowerCase() === (userAddress || "").toLowerCase());
+    const canCancel = status === "Open" && isMaker;
+
+    let actions = "";
+    if (canFill) {
+      const fillFn = o.makerGivesNative ? "fillGivingToken" : "fillGivingNative";
+      actions += `<button class="btn btn-primary btn-sm" data-action="${fillFn}" data-id="${id}">Fill offer</button>`;
+    }
+    if (canCancel) {
+      actions += `<button class="btn btn-danger btn-sm" data-action="cancel" data-id="${id}">Cancel</button>`;
+    }
+
+    return `
+      <div class="offer-card ${dirClass}">
+        <div class="top-row">
+          <span class="offer-id">#${id}</span>
+          <span class="offer-badge ${status.toLowerCase()}">${status.toLowerCase()}</span>
+        </div>
+        <div class="offer-trade">${giveLabel}</div>
+        <div class="offer-meta">
+          maker ${o.maker.slice(0,6)}…${o.maker.slice(-4)}
+          ${isRestricted ? ` · <span class="private-tag">restricted to ${o.taker.slice(0,6)}…${o.taker.slice(-4)}</span>` : " · open to anyone"}
+        </div>
+        ${actions ? `<div class="offer-actions">${actions}</div>` : ""}
+        <div class="status-msg" id="offerStatus-${id}"></div>
+      </div>
+    `;
+  }
+
+  function attachOfferActions() {
+    document.querySelectorAll("[data-action]").forEach(btn => {
+      btn.addEventListener("click", () => handleOfferAction(btn));
+    });
+  }
+
+  async function handleOfferAction(btn) {
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    const statusEl = document.getElementById(`offerStatus-${id}`);
+    btn.disabled = true;
+    try {
+      if (action === "cancel") {
+        statusEl.textContent = "Cancelling…";
+        const tx = await contract.cancelOffer(id);
+        await tx.wait();
+      } else if (action === "fillGivingToken") {
+        const o = await withReadFallback(p => getReadContract(p).getOffer(id));
+        const token = new ethers.Contract(o.token, ERC20_ABI, signer);
+        const decimals = await token.decimals().catch(() => 18);
+        const tokenBal = await token.balanceOf(userAddress).catch(() => null);
+        if (tokenBal !== null && tokenBal < o.amountToken) {
+          const meta = await getTokenMeta(o.token);
+          statusEl.textContent = `You only hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}, but filling this offer needs ${ethers.formatUnits(o.amountToken, decimals)} ${meta.symbol}.`;
+          statusEl.className = "status-msg error";
+          btn.disabled = false;
+          return;
+        }
+        statusEl.textContent = "Approving token spend…";
+        const allowance = await token.allowance(userAddress, CONTRACT_ADDRESS);
+        if (allowance < o.amountToken) {
+          const approveTx = await token.approve(CONTRACT_ADDRESS, o.amountToken);
+          await approveTx.wait();
+        }
+        statusEl.textContent = "Filling offer…";
+        const tx = await contract.fillOfferGivingToken(id);
+        await tx.wait();
+      } else if (action === "fillGivingNative") {
+        const o = await withReadFallback(p => getReadContract(p).getOffer(id));
+        const nativeBal = await provider.getBalance(userAddress);
+        if (nativeBal < o.amountNative) {
+          statusEl.textContent = `You have ${ethers.formatEther(nativeBal)} ${NATIVE_SYMBOL}, but filling this offer needs ${ethers.formatEther(o.amountNative)} ${NATIVE_SYMBOL} (plus gas).`;
+          statusEl.className = "status-msg error";
+          btn.disabled = false;
+          return;
+        }
+        statusEl.textContent = "Sending BDAG…";
+        const tx = await contract.fillOfferGivingNative(id, { value: o.amountNative });
+        await tx.wait();
+      }
+      statusEl.textContent = "Done.";
+      statusEl.className = "status-msg success";
+      refreshStats();
+      loadOffers();
+      loadTradeHistory();
+    } catch (err) {
+      statusEl.textContent = friendlyError(err);
+      statusEl.className = "status-msg error";
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
