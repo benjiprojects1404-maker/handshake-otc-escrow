@@ -904,7 +904,7 @@
   const CHAIN_ID_DEC = 1404;
   const CHAIN_ID_HEX = "0x57c"; // 1404 in hex
   const NETWORK_NAME = "BlockDAG (Chain 1404)";
-  // RPC endpoints for chain 1404. The live list comes from https://nodaldex.fyi/api/rpcs, which
+  // RPC endpoints for chain 1404. The live list comes from https://www.nodaldex.fyi/api/rpcs, which
   // follows the community node board (bdag.community/chain#nodes): only nodes it finds on chain
   // 1404, near the head and with matching block hashes are used, and the flagged fork is never
   // used. So nodes that shut down drop off and new ones appear without a site update.
@@ -912,7 +912,7 @@
   // "add network" prompt. Last reviewed 1 Oct 2026. An RPC can misreport balances/gas/tx status to
   // the wallet's confirmation dialogs before a user signs, so this list is a trust decision; the RPC
   // status panel below also cross-checks the nodes live from the visitor's browser.
-  const RPC_LIST_URL = "https://nodaldex.fyi/api/rpcs";
+  const RPC_LIST_URL = "https://www.nodaldex.fyi/api/rpcs";
   const FALLBACK_RPC_URLS = [
     "https://rpc.blockdag.engineering",
     "https://rpc.capedag.com",
