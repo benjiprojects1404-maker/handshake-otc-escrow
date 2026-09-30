@@ -790,6 +790,46 @@
     </div>
   </div>
 
+  <div class="panel" style="margin-bottom:20px;" id="security">
+    <h3>Security &amp; trust</h3>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">What nobody can do, including us</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        The contract has no function that withdraws, rescues or redirects an open offer's assets. Once you lock BDAG or a token in an offer, only two things can happen to it: it goes to the taker when they fill your offer, or it comes back to you when you cancel. Nobody else, including the contract owner, can move it.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">What the contract owner can change</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        Only these settings: the fee (hard-capped in the contract at 3%), where fees are paid, per-offer beta limits, and pausing <em>new</em> offers. Each offer records the fee at the moment it's created, so a later fee change never affects an open offer. Pausing can't trap anyone: filling and cancelling existing offers always keep working.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">Who the owner is</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        A 2-of-2 multisig wallet (<a href="https://explorer.bdagexplorer.com/address/0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0x4E24…60fc</a>) controlled by two separate hardware wallets. Every owner action needs both to sign, so no single key can change anything.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">Check it yourself</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        The contract (<a href="https://explorer.bdagexplorer.com/address/0xD907701A2D96f7D0E7596b02737C9F36446cf5CA" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0xD907…f5CA</a>) is verified on explorer.bdagexplorer.com, so the published source is proven to match the deployed code. Read the <a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow/blob/main/Handshake_OTC_Escrow/contracts/OTCEscrow_v3.sol" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">source on GitHub</a>. It's also self-contained, with no external libraries or upgrade mechanism, so the code can't be swapped out later.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">Atomic by design</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        Both sides of a trade settle in the same transaction or not at all. There is no delivery step to dispute and no arbiter who could decide in someone's favour.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label style="font-size:13px; color: var(--ink);">Found a vulnerability?</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        Please report it privately to <a href="mailto:security@handshakeotc.fyi" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">security@handshakeotc.fyi</a> rather than posting it publicly, so it can be fixed (or new offers paused) before anyone exploits it.
+      </div>
+    </div>
+  </div>
+
   <div class="panel" style="margin-bottom:20px;">
     <h3>FAQ</h3>
     <div class="field" style="margin-bottom:18px;">
@@ -811,6 +851,12 @@
         token would. The live check under the token address field confirms a contract exists and returns a
         symbol/decimals — it does not confirm the token is trustworthy. Only trade tokens you've independently
         verified yourself.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">What does this site collect about me?</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        Nothing is sent to us: there are no accounts, no sign-ups and no server of ours behind this page. Your browser talks directly to public BlockDAG RPC endpoints (listed under RPC status below) to read the chain and send transactions you sign, loads its code library from cdnjs and fonts from Google Fonts, and asks CoinGecko for the BDAG price. Those services see a normal web request from your browser, as with any website. The only thing stored on your device is a note that you accepted the terms, kept in your browser's local storage.
       </div>
     </div>
     <div class="field" style="margin-bottom:0;" id="faq-audit">
@@ -841,7 +887,7 @@
   </div>
 
   <footer>
-    handshake · otc escrow · held by code, not by us · beta software, unaudited · verify contract source before trading · not financial advice
+    handshake · otc escrow · held by code, not by us · beta software, unaudited · <a href="https://explorer.bdagexplorer.com/address/0xD907701A2D96f7D0E7596b02737C9F36446cf5CA" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">verify contract source</a> before trading · <a href="#security" style="color:inherit; text-decoration:underline;">security</a> · not financial advice
   </footer>
 </div>
 
