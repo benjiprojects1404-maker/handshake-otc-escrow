@@ -204,6 +204,7 @@
     margin: 12px 0 0;
   }
   .hero-tickertape {
+    max-width: 100%;
     margin-top: 26px;
     overflow: hidden;
     border-top: 1px solid var(--line);
@@ -538,6 +539,7 @@
   @media (max-width: 860px) {
     .hero { flex-direction: column; align-items: stretch; }
     .ticket-wrap { max-width: 100%; margin: 0; }
+    .hero > div:first-child { flex: 0 0 auto; min-width: 0; max-width: 100%; }
     .ticket { transform: none; margin-top: 20px; }
     .grid-2 { grid-template-columns: 1fr; }
     .stat-bar { grid-template-columns: repeat(2, 1fr); }
@@ -628,9 +630,14 @@
     Experimental software on an early-stage chain. Source is published but not independently audited — start with small amounts. <a href="#faq-audit" onclick="document.getElementById('faq-audit').scrollIntoView({behavior:'smooth'}); return false;">Read more</a>
   </div>
 
+  <div class="beta-banner" id="pausedBanner" style="display:none;">
+    <span class="beta-banner-tag">PAUSED</span>
+    New offers are paused by the contract owner. Existing offers can still be filled or cancelled.
+  </div>
+
   <div class="hero">
     <div>
-      <div class="hero-eyebrow">PEER-TO-PEER · NON-CUSTODIAL</div>
+      <div class="hero-eyebrow">PEER-TO-PEER · ESCROW HELD BY CODE</div>
       <h1>Trade hand to hand,<br><em>not order to order.</em></h1>
       <p>Lock BDAG or a token in escrow, name your price, and let anyone — or one specific address — fill it. Funds move atomically or not at all. Cancel anytime before it's taken.</p>
       <div class="hero-tickertape">
@@ -643,7 +650,7 @@
     <div class="ticket-wrap">
     <div class="ticket">
       <div class="sheen"></div>
-      <div class="stub-row"><span>DEAL TICKET</span><span>NON-CUSTODIAL</span></div>
+      <div class="stub-row"><span>DEAL TICKET</span><span>HELD BY CONTRACT</span></div>
       <div class="stub-trade">
         <div>
           <div class="stub-amt give">1,000<span class="stub-unit">BDAG · GIVE</span></div>
@@ -661,7 +668,7 @@
   <div class="panel" style="margin-bottom:20px;">
     <h3 style="margin-bottom:12px;">What Handshake does</h3>
     <p style="color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0 0 16px; max-width: 780px;">
-      Handshake is a peer-to-peer, non-custodial escrow contract on chain 1404. Anyone can lock up
+      Handshake is a peer-to-peer escrow contract on chain 1404. While an offer is open, the maker's asset is held by the contract itself (not by us or any other person) and goes straight back to them if they cancel. Anyone can lock up
       <span style="color:var(--give)">BDAG</span> or any <span style="color:var(--get)">ERC-20 token</span> and post it as
       an open offer; a counterparty fills it and both assets change hands in one atomic transaction — either the full
       trade settles, or nothing moves at all. There's no pooled liquidity, no order book matching engine, and no
@@ -834,7 +841,7 @@
   </div>
 
   <footer>
-    handshake · otc escrow · non-custodial · beta software, unaudited · verify contract source before trading · not financial advice
+    handshake · otc escrow · held by code, not by us · beta software, unaudited · verify contract source before trading · not financial advice
   </footer>
 </div>
 
@@ -843,18 +850,14 @@
   // ---------------------------------------------------------------------
   // CONFIG — fill these in after you deploy the contract
   // ---------------------------------------------------------------------
-  const CONTRACT_ADDRESS = "0xD907701A2D96f7D0E7596b02737C9F36446cf5CA"; // v3 + legal-coverage additions (pause, per-asset deposit cap, OwnershipTransferred event) — confirmed correct via setMaxOfferAmount present in Remix's function list. Previous address 0x3A8716b7260D2F808250d37F4534Ebe22b6C4b8a was v3 without these additions; call setPaused(true) on that old contract so it stops taking new offers while anything already open there can still be filled/cancelled normally. 0x225B16dE299Dc569b1FD14e75e0Fbb79883Dd902 was an earlier deployment attempt from this same session — unused, safe to ignore.
+  const CONTRACT_ADDRESS = "0xD907701A2D96f7D0E7596b02737C9F36446cf5CA"; // OTCEscrow v3 with pause + per-asset caps (source: contracts/OTCEscrow_v3.sol). The original 0x3A87…4b8a is paused.
   const CHAIN_ID_DEC = 1404;
   const CHAIN_ID_HEX = "0x57c"; // 1404 in hex
   const NETWORK_NAME = "BlockDAG (Chain 1404)";
-  // NOTE: this is a third-party community RPC fork (WelshDAG), used because BlockDAG's
-  // own rpc.bdagscan.com was returning 403s for non-browser requests at time of setup.
-  // A malicious or unreliable RPC can misreport balances/gas/tx status to the wallet's
-  // confirmation dialogs before a user signs — treat this as a trust decision, not
-  // interchangeable plumbing. Re-verify before scaling up real usage.
-  // Ordered by observed reliability (sync %, uptime, latency), with welshdag.trade
-  // bumped to 2nd based on direct hands-on testing working well — a reminder that
-  // this list is a living ranking, not a one-time verdict.
+  // Community-run RPC endpoints for chain 1404, kept in line with Nodal's list. Read calls fail
+  // over between them automatically. An RPC can misreport balances/gas/tx status to the wallet's
+  // confirmation dialogs before a user signs, so this list is a trust decision, not interchangeable
+  // plumbing; the RPC status panel below cross-checks them live from the visitor's browser.
   const RPC_URLS = [
     "https://rpc.bdagexplorer.com",
     "https://rpc.welshdag.trade",
@@ -863,6 +866,8 @@
     "https://rms-bdag-rpc.de/api/rpc-live",
     "https://rpc.capedag.com",
     "https://rpc.west.bdag-us.org",
+    "https://rpc.blockdag.engineering",
+    "https://rpc.east.bdag-us.org",
   ];
   const NATIVE_SYMBOL = "BDAG";
 
@@ -874,6 +879,8 @@
     "function cancelOffer(uint256 id)",
     "function totalOffers() view returns (uint256)",
     "function feeBps() view returns (uint16)",
+    "function paused() view returns (bool)",
+    "function maxOfferAmount(address token) view returns (uint256)",
     "function getOffer(uint256 id) view returns (address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint16 feeBpsAtCreation)",
     "event OfferCreated(uint256 indexed id, address indexed maker, address indexed taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative)",
     "event OfferFilled(uint256 indexed id, address indexed taker, uint256 feePaid)",
@@ -999,6 +1006,8 @@
     if (raw.includes("not open")) return "This offer is no longer open.";
     if (raw.includes("not your offer")) return "You are not the counterparty for this offer.";
     if (raw.includes("wrong BDAG amount")) return "Sent BDAG amount doesn't match the offer.";
+    if (raw.includes("offers paused")) return "New offers are paused right now. Existing offers can still be filled or cancelled.";
+    if (raw.includes("exceeds per-offer cap")) return "That's above Handshake's beta limit per offer. Try a smaller amount.";
     if (raw.includes("could not coalesce error") || raw.includes("missing response")) {
       return "The chain 1404 RPC didn't return a usable response for that query — it may be overloaded or rate-limiting. Try refreshing in a moment.";
     }
@@ -1253,6 +1262,10 @@ details to be added here before this is used for real.]
         return Promise.all([c.totalOffers(), c.feeBps()]);
       });
       document.getElementById("statTotal").textContent = total.toString();
+      try {
+        const isPaused = await withReadFallback(p => getReadContract(p).paused());
+        document.getElementById("pausedBanner").style.display = isPaused ? "" : "none";
+      } catch (e) { /* banner is best-effort */ }
       document.getElementById("statFee").textContent = (Number(fee) / 100).toFixed(2) + "%";
     } catch (e) { /* nice-to-have, fail quietly */ }
   }
@@ -1356,6 +1369,28 @@ details to be added here before this is used for real.]
       const decimals = await token.decimals().catch(() => 18);
       const amountNativeWei = ethers.parseEther(amountNativeStr);
       const amountTokenUnits = ethers.parseUnits(amountTokenStr, decimals);
+
+      // Check the contract's own rules first, so users get a clear message instead of a failed transaction.
+      const [isPaused, cap] = await withReadFallback(p => {
+        const c = getReadContract(p);
+        return Promise.all([c.paused(), c.maxOfferAmount(direction === "giveNative" ? ethers.ZeroAddress : tokenAddr)]);
+      });
+      if (isPaused) {
+        statusEl.textContent = "New offers are paused right now. Existing offers can still be filled or cancelled.";
+        statusEl.className = "status-msg error";
+        btn.disabled = false;
+        return;
+      }
+      const lockedAmount = direction === "giveNative" ? amountNativeWei : amountTokenUnits;
+      if (cap > 0n && lockedAmount > cap) {
+        const capText = direction === "giveNative"
+          ? `${ethers.formatEther(cap)} ${NATIVE_SYMBOL}`
+          : `${ethers.formatUnits(cap, decimals)} ${(await getTokenMeta(tokenAddr)).symbol}`;
+        statusEl.textContent = `During the beta, each offer can lock at most ${capText}. Lower the amount and try again.`;
+        statusEl.className = "status-msg error";
+        btn.disabled = false;
+        return;
+      }
 
       if (direction === "giveNative") {
         const nativeBal = await provider.getBalance(userAddress);
