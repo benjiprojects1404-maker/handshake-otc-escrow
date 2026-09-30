@@ -1594,19 +1594,19 @@ details to be added here before this is used for real.]
         const blockNumber = await pingProvider(p, 6000);
         const ms = Math.round(performance.now() - started);
         results[url] = { ok: true, blockNumber, ms };
-        if (fs === "fork" || fs === "mismatch") {
+        if (fs === "fork" || fs === "mismatch" || fs === "behind") {
           row.className = "rpc-row down";
-          lat.textContent = fs === "fork" ? "different chain — not used" : "block hashes don't match — not used";
+          lat.textContent = fs === "fork" ? "different chain — not used" : fs === "behind" ? "behind the chain head — not used" : "block hashes don't match — not used";
         } else {
           row.className = "rpc-row up";
-          lat.textContent = fs === "behind" ? `${ms} ms · behind` : `${ms} ms`;
+          lat.textContent = `${ms} ms`;
         }
       } catch (e) {
         results[url] = { ok: false };
         if (fs === "ok") { row.className = "rpc-row blocked"; lat.textContent = "online, but not from browsers"; }
         else {
           row.className = "rpc-row down";
-          lat.textContent = fs === "offline" ? "offline" : fs === "fork" ? "different chain — not used" : fs === "behind" ? "behind the chain head" : fs === "mismatch" ? "block hashes don't match — not used" : "unreachable";
+          lat.textContent = fs === "offline" ? "offline" : fs === "fork" ? "different chain — not used" : fs === "behind" ? "behind the chain head — not used" : fs === "mismatch" ? "block hashes don't match — not used" : "unreachable";
         }
       }
     }));
@@ -1627,19 +1627,26 @@ details to be added here before this is used for real.]
     // This is the actual fork question, not just "is it up." Pick a block a
     // few behind the slowest node's tip (so a barely-propagated block on a
     // faster node doesn't look like a false disagreement) and compare hashes.
-    const upUrls = Object.keys(results).filter(u => results[u].ok);
+    // Leave out nodes the node board already flags (behind, fork, mismatched): known-bad, and they'd drag the reference block down.
+    const upUrls = Object.keys(results).filter(u => results[u].ok && (feedStatus[u] == null || feedStatus[u] === "ok"));
     if (upUrls.length >= 2) {
       const refBlock = Math.min(...upUrls.map(u => results[u].blockNumber)) - 5;
       if (refBlock > 0) {
         summaryEl.textContent = "Cross-checking block hashes across responsive RPCs…";
         try {
-          const hashes = await Promise.all(upUrls.map(async (url) => {
-            const block = await getRpcProvider(url).getBlock(refBlock);
+          const settled = await Promise.allSettled(upUrls.map(async (url) => {
+            const block = await Promise.race([
+              getRpcProvider(url).getBlock(refBlock),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+            ]);
             return { url, hash: block?.hash };
           }));
+          // Compare the nodes that answered; a slow node shouldn't sink the whole check.
+          const hashes = settled.filter(x => x.status === "fulfilled" && x.value.hash).map(x => x.value);
+          if (hashes.length < 2) throw new Error("not enough answers");
           const uniqueHashes = new Set(hashes.map(h => h.hash));
           if (uniqueHashes.size <= 1) {
-            summaryEl.textContent = `✓ All ${upUrls.length} responsive RPCs agree on block #${refBlock}'s hash.`;
+            summaryEl.textContent = `✓ All ${hashes.length} responsive RPCs agree on block #${refBlock}'s hash.`;
             summaryEl.className = "rpc-divergence-ok";
           } else {
             const groups = {};
