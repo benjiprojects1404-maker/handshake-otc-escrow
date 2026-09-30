@@ -46,6 +46,11 @@ Pushes to `main` redeploy it. The old `otcescrow.pages.dev` address forwards to 
 Before sending anything, the page checks the contract's pause state and the per-offer limit, the user's balance, and
 that the token address is a real contract, so users get a clear message instead of a failed transaction.
 
+## Reporting a vulnerability
+
+Please report security issues privately to **security@handshakeotc.fyi**, not in public issues, so they can be fixed
+(or new offers paused) first.
+
 ## Disclaimer
 
 Experimental software. Not audited. Not financial advice.
