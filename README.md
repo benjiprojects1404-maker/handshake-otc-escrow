@@ -18,7 +18,8 @@ other person. The contract's rules decide where it goes: to the taker on fill, b
 |---|---|---|
 | **OTCEscrow (live)** | `0xD907701A2D96f7D0E7596b02737C9F36446cf5CA` | `contracts/OTCEscrow_v3.sol`. Verified on explorer.bdagexplorer.com |
 | OTCEscrow (original) | `0x3A8716b7260D2F808250d37F4534Ebe22b6C4b8a` | `contracts/OTCEscrow_v3_original.sol`. **Paused**, never had an offer, holds nothing |
-| Owner + fee recipient | `0x26bDba7b184df8b88965Bed46AEd6ea0E60fF940` | |
+| Owner: 2-of-2 multisig (Trezor + Ledger) | `0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc` | Since 1 Oct 2026 (block 22975549). Same multisig that owns Nodal and holds Reef's `feeToSetter` |
+| Fee recipient | `0x26bDba7b184df8b88965Bed46AEd6ea0E60fF940` | |
 
 Both sources compile to exactly the deployed runtime code with **Solidity 0.8.24, optimizer on / 200 runs, EVM
 `berlin`** (BlockDAG's EVM targets Berlin; newer EVM versions compile but then fail on-chain). The contract has no
@@ -30,8 +31,12 @@ external imports and no immutables.
 - **Pause:** `setPaused(true)` stops *new* offers only. Existing offers can still be filled or cancelled.
 - **Beta limits:** `setMaxOfferAmount(token, cap)` limits how much a maker can lock in one offer. Use the zero
   address for BDAG. `0` means no limit. Any token without its own cap is unlimited.
+  Currently set: **100 BDAG** and **1,000,000 NOCAP** per offer.
 - **Owner-only:** `setFeeBps`, `setFeeRecipient`, `setPaused`, `setMaxOfferAmount`, `transferOwnership`
-  (single-step, so double-check the address).
+  (single-step, so double-check the address). The owner is the multisig, so each of these needs both hardware
+  wallets: submit → confirm → execute, the same flow as Nodal (see the Nodal README's "Admin actions" section,
+  with `0xD907701A2D96f7D0E7596b02737C9F36446cf5CA` as the target). The multisig doesn't revert if the inner call
+  fails, so always check the proposal shows `executed: true`.
 
 ## Website
 
