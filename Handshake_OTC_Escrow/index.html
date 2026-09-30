@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Old hosting address -> own domain (keeps the same path). Only fires on the exact old host,
+  // so the real domain and preview deployments are unaffected.
+  if (location.hostname === "otcescrow.pages.dev") location.replace("https://handshakeotc.fyi" + location.pathname + location.search + location.hash);
+</script>
 <title>Handshake — OTC Escrow on Chain 1404</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
