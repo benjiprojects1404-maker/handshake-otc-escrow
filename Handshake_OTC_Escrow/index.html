@@ -417,6 +417,8 @@
   .rpc-row .rpc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--ink-faint); }
   .rpc-row.up .rpc-dot { background: var(--get); box-shadow: 0 0 6px var(--get); }
   .rpc-row.down .rpc-dot { background: var(--give); }
+  .rpc-row.blocked .rpc-dot { background: var(--ink-faint); }
+  .rpc-row .rpc-latency { text-align: right; }
   .rpc-row.checking .rpc-dot { background: var(--private); animation: arrowPulse 1.2s ease-in-out infinite; }
   .rpc-row .rpc-url { color: var(--ink); flex: 1; word-break: break-all; }
   .rpc-row .rpc-latency { color: var(--ink-faint); font-size: 11px; white-space: nowrap; }
@@ -876,12 +878,14 @@
       <button type="button" id="rpcCheckBtn" class="ghost-btn">Check now</button>
     </div>
     <p style="font-size:12px; color: var(--ink-faint); margin: 4px 0 14px; line-height:1.6;">
-      Checked live, from your own browser, against each RPC below — not borrowed from a third-party leaderboard.
-      Handshake automatically falls back to the next entry if one fails. This also cross-checks whether the
-      responding RPCs agree on recent block hashes — chain 1404 has documented, actively-discussed disagreement
-      between different node operators about which chain history is canonical. This check can only tell you
-      whether these specific RPCs agree with each other, not which side (if any) is correct.
+      The list of public endpoints comes from the community's <a href="https://bdag.community/chain#nodes" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">node board</a>,
+      so nodes that shut down drop off and new ones appear without a site update. Each one is then checked live
+      from your own browser, which is the connection Handshake uses to read offers; it automatically falls back
+      to the next healthy entry if one fails. It also cross-checks whether the responding RPCs agree on recent
+      block hashes, because chain 1404 has had operators serving different chain histories. That tells you
+      whether these RPCs agree with each other, not which side (if any) is correct.
     </p>
+    <p id="rpcListSource" style="font-size:11px; color: var(--ink-faint); margin: 0 0 10px; line-height:1.6;">Loading the endpoint list…</p>
     <div id="rpcDivergenceSummary" style="font-size:12px; margin-bottom:12px;"></div>
     <div id="rpcStatusList" class="rpc-status-list"></div>
   </div>
@@ -900,21 +904,55 @@
   const CHAIN_ID_DEC = 1404;
   const CHAIN_ID_HEX = "0x57c"; // 1404 in hex
   const NETWORK_NAME = "BlockDAG (Chain 1404)";
-  // Community-run RPC endpoints for chain 1404, kept in line with Nodal's list. Read calls fail
-  // over between them automatically. An RPC can misreport balances/gas/tx status to the wallet's
-  // confirmation dialogs before a user signs, so this list is a trust decision, not interchangeable
-  // plumbing; the RPC status panel below cross-checks them live from the visitor's browser.
-  const RPC_URLS = [
-    "https://rpc.bdagexplorer.com",
-    "https://rpc.welshdag.trade",
-    "https://rpc.cms-mining-pool.net",
-    "https://rpc.dvdmining.com",
-    "https://rms-bdag-rpc.de/api/rpc-live",
-    "https://rpc.capedag.com",
-    "https://rpc.west.bdag-us.org",
+  // RPC endpoints for chain 1404. The live list comes from https://nodaldex.fyi/api/rpcs, which
+  // follows the community node board (bdag.community/chain#nodes): only nodes it finds on chain
+  // 1404, near the head and with matching block hashes are used, and the flagged fork is never
+  // used. So nodes that shut down drop off and new ones appear without a site update.
+  // FALLBACK_RPC_URLS is used until that list loads, if it can't be loaded, and for the wallet's
+  // "add network" prompt. Last reviewed 1 Oct 2026. An RPC can misreport balances/gas/tx status to
+  // the wallet's confirmation dialogs before a user signs, so this list is a trust decision; the RPC
+  // status panel below also cross-checks the nodes live from the visitor's browser.
+  const RPC_LIST_URL = "https://nodaldex.fyi/api/rpcs";
+  const FALLBACK_RPC_URLS = [
     "https://rpc.blockdag.engineering",
-    "https://rpc.east.bdag-us.org",
+    "https://rpc.capedag.com",
+    "https://rms-bdag-rpc.de/api/rpc-live",
+    "https://rpc.dvdmining.com",
+    "https://rpc.cms-mining-pool.net",
+    "https://rpc.england.bdag-us.org",
+    "https://rpc.dagcore.net",
+    "https://rpc.escrowhubs.io",
+    "https://rpc.brazil.bdag-us.org",
+    "https://rpc.bdagexplorer.com",
   ];
+  let RPC_URLS = FALLBACK_RPC_URLS.slice();
+  let rpcFeed = null; // last live list: { rpcs, excluded, checkedAt }
+  const SAFE_RPC_URL = /^https:\/\/[a-z0-9.-]+(\/[A-Za-z0-9\/_-]*)?$/i;
+
+  let rpcFeedPromise = null;
+  function loadRpcFeed(refresh = false) {
+    if (rpcFeedPromise && !refresh) return rpcFeedPromise;
+    rpcFeedPromise = (async () => {
+      try {
+        const res = await Promise.race([
+          fetch(RPC_LIST_URL, { headers: { accept: "application/json" } }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+        ]);
+        if (!res.ok) return rpcFeed;
+        const j = await res.json();
+        if (!j || !Array.isArray(j.rpcs)) return rpcFeed;
+        const rpcs = j.rpcs.filter(r => r && typeof r.url === "string" && SAFE_RPC_URL.test(r.url));
+        const usable = rpcs.filter(r => r.usable).map(r => r.url);
+        rpcFeed = { rpcs, excluded: Array.isArray(j.excluded) ? j.excluded : [], checkedAt: j.checkedAt || null };
+        if (usable.length) RPC_URLS = usable;
+        return rpcFeed;
+      } catch (e) {
+        return rpcFeed;
+      }
+    })();
+    return rpcFeedPromise;
+  }
+  loadRpcFeed();
   const NATIVE_SYMBOL = "BDAG";
 
   const CONTRACT_ABI = [
@@ -1082,7 +1120,7 @@
               chainId: CHAIN_ID_HEX,
               chainName: NETWORK_NAME,
               nativeCurrency: { name: NATIVE_SYMBOL, symbol: NATIVE_SYMBOL, decimals: 18 },
-              rpcUrls: RPC_URLS,
+              rpcUrls: FALLBACK_RPC_URLS,
             }],
           });
         } else {
@@ -1509,39 +1547,67 @@ details to be added here before this is used for real.]
     return url.replace(/^https?:\/\//, "");
   }
 
-  async function checkAllRpcs() {
+  function escHtml(v) {
+    return String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  async function checkAllRpcs(refreshList = false) {
     const listEl = document.getElementById("rpcStatusList");
     const summaryEl = document.getElementById("rpcDivergenceSummary");
+    const sourceEl = document.getElementById("rpcListSource");
     const btn = document.getElementById("rpcCheckBtn");
     btn.disabled = true;
     btn.textContent = "Checking…";
     summaryEl.textContent = "";
     summaryEl.className = "";
 
-    listEl.innerHTML = RPC_URLS.map(url => `
-      <div class="rpc-row checking" data-url="${url}">
+    // Which endpoints exist: the live list (community node board), or the built-in one.
+    const feed = await loadRpcFeed(refreshList);
+    const entries = feed
+      ? feed.rpcs.map(r => ({ url: r.url, feed: r.status, blurb: r.blurb || "" }))
+      : FALLBACK_RPC_URLS.map(url => ({ url, feed: null, blurb: "" }));
+    const checkedAt = feed && feed.checkedAt ? new Date(feed.checkedAt) : null;
+    sourceEl.textContent = (feed
+      ? "Endpoint list: live from bdag.community" + (checkedAt && !isNaN(checkedAt) ? ` (checked ${checkedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : "") + "."
+      : "Couldn't load the live endpoint list just now, so this shows Handshake's built-in list.")
+      + (feed && feed.excluded.length ? " Never used: " + feed.excluded.map(x => `${x.name} (${x.reason})`).join(", ") + "." : "");
+
+    listEl.innerHTML = entries.map(e => `
+      <div class="rpc-row checking" data-url="${escHtml(e.url)}" title="${escHtml(e.blurb)}">
         <span class="rpc-dot"></span>
-        <span class="rpc-url">${shortRpcLabel(url)}</span>
+        <span class="rpc-url">${escHtml(shortRpcLabel(e.url))}</span>
         <span class="rpc-latency">checking…</span>
       </div>
     `).join("");
+    const feedStatus = Object.fromEntries(entries.map(e => [e.url, e.feed]));
+    const checkUrls = entries.map(e => e.url);
 
     const results = {}; // url -> { ok, blockNumber, ms }
 
-    await Promise.all(RPC_URLS.map(async (url) => {
+    await Promise.all(checkUrls.map(async (url) => {
       const row = listEl.querySelector(`.rpc-row[data-url="${CSS.escape(url)}"]`);
+      const lat = row.querySelector(".rpc-latency");
+      const fs = feedStatus[url];
       const started = performance.now();
       try {
         const p = getRpcProvider(url);
         const blockNumber = await pingProvider(p, 6000);
         const ms = Math.round(performance.now() - started);
-        row.className = "rpc-row up";
-        row.querySelector(".rpc-latency").textContent = `${ms} ms`;
         results[url] = { ok: true, blockNumber, ms };
+        if (fs === "fork" || fs === "mismatch") {
+          row.className = "rpc-row down";
+          lat.textContent = fs === "fork" ? "different chain — not used" : "block hashes don't match — not used";
+        } else {
+          row.className = "rpc-row up";
+          lat.textContent = fs === "behind" ? `${ms} ms · behind` : `${ms} ms`;
+        }
       } catch (e) {
-        row.className = "rpc-row down";
-        row.querySelector(".rpc-latency").textContent = "unreachable";
         results[url] = { ok: false };
+        if (fs === "ok") { row.className = "rpc-row blocked"; lat.textContent = "online, but not from browsers"; }
+        else {
+          row.className = "rpc-row down";
+          lat.textContent = fs === "offline" ? "offline" : fs === "fork" ? "different chain — not used" : fs === "behind" ? "behind the chain head" : fs === "mismatch" ? "block hashes don't match — not used" : "unreachable";
+        }
       }
     }));
 
@@ -1592,7 +1658,7 @@ details to be added here before this is used for real.]
     btn.textContent = "Check now";
   }
 
-  document.getElementById("rpcCheckBtn").addEventListener("click", checkAllRpcs);
+  document.getElementById("rpcCheckBtn").addEventListener("click", () => checkAllRpcs(true));
   checkAllRpcs();
 
   // ---- Load & render offers ----
