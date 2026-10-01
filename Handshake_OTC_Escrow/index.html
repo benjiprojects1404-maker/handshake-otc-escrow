@@ -694,7 +694,7 @@
       </div>
       <div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">LIVE MARKET DATA</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Real-time BDAG/USD price, total offers, protocol fee, and your wallet/network status at a glance.</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">The per-offer limit, total offers, protocol fee, and your wallet/network status at a glance, all read from the chain.</div>
       </div>
       <div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">ON-CHAIN HISTORY</div>
@@ -709,9 +709,9 @@
 
   <div class="stat-bar">
     <div class="stat-cell">
-      <div class="label">bdag / usd</div>
+      <div class="label">bdag limit / offer</div>
 
-      <div class="value" id="statPrice">—</div>
+      <div class="value" id="statLimit">—</div>
     </div>
     <div class="stat-cell">
       <div class="label">total offers</div>
@@ -861,7 +861,7 @@
     <div class="field" style="margin-bottom:18px;">
       <label style="font-size:13px; color: var(--ink);">What does this site collect about me?</label>
       <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
-        Nothing is sent to us: there are no accounts, no sign-ups and no server of ours behind this page. Your browser talks directly to public BlockDAG RPC endpoints (listed under RPC status below) to read the chain and send transactions you sign, loads its code library from cdnjs and fonts from Google Fonts, and asks CoinGecko for the BDAG price. Those services see a normal web request from your browser, as with any website. The only thing stored on your device is a note that you accepted the terms, kept in your browser's local storage.
+        Nothing is sent to us: there are no accounts, no sign-ups and no server of ours behind this page. Your browser talks directly to public BlockDAG RPC endpoints (listed under RPC status below) to read the chain and send transactions you sign, loads its code library from cdnjs and fonts from Google Fonts. Those services see a normal web request from your browser, as with any website. The only thing stored on your device is a note that you accepted the terms, kept in your browser's local storage.
       </div>
     </div>
     <div class="field" style="margin-bottom:0;" id="faq-audit">
@@ -1239,27 +1239,9 @@ details to be added here before this is used for real.]
     doConnectWallet();
   });
 
-  // ---- BDAG/USD price (off-chain, informational only — never used by the contract) ----
-  const COINGECKO_ID = "blockdag";
-  async function loadPrice() {
-    const el = document.getElementById("statPrice");
-    try {
-      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${COINGECKO_ID}&vs_currencies=usd&include_24hr_change=true`);
-      const data = await res.json();
-      const info = data[COINGECKO_ID];
-      if (!info) { el.textContent = "n/a"; return; }
-      const price = info.usd;
-      const change = info.usd_24h_change;
-      const priceStr = price < 0.01 ? price.toFixed(6) : price.toFixed(4);
-      const changeStr = change === undefined ? "" :
-        `<span class="price-change ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(1)}%</span>`;
-      el.innerHTML = `$${priceStr}${changeStr}`;
-    } catch (e) {
-      el.textContent = "n/a";
-    }
-  }
-  loadPrice();
-  setInterval(loadPrice, 60000);
+  // No dollar price is shown: the community chain's BDAG has no established outside market price,
+  // and CoinGecko's "blockdag" listing is BlockDAG Network's token, not this chain's.
+
 
   // ---- Recent fills chart, built from this contract's own OfferFilled events ----
   // ---- Fetch logs in bounded chunks instead of genesis-to-latest in one shot.
@@ -1354,6 +1336,10 @@ details to be added here before this is used for real.]
         document.getElementById("pausedBanner").style.display = isPaused ? "" : "none";
       } catch (e) { /* banner is best-effort */ }
       document.getElementById("statFee").textContent = (Number(fee) / 100).toFixed(2) + "%";
+      try {
+        const lim = await withReadFallback(p => getReadContract(p).maxOfferAmount(ethers.ZeroAddress));
+        document.getElementById("statLimit").textContent = lim === 0n ? "no limit" : Number(ethers.formatEther(lim)).toLocaleString("en-US") + " BDAG";
+      } catch (e) { /* best-effort */ }
     } catch (e) { /* nice-to-have, fail quietly */ }
   }
 
