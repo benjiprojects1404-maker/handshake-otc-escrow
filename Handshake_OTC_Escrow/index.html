@@ -1052,6 +1052,10 @@
   // Cache token symbol/decimals per address so we're not re-fetching on every
   // render or refresh — and so offer cards can show "2.0 XYZ" instead of a
   // raw base-unit integer next to a truncated, unverifiable address.
+  function cleanLabel(v, max, fallback) {
+    const t = String(v == null ? "" : v).replace(/[^A-Za-z0-9 $._+\-()\/]/g, "").replace(/\s+/g, " ").trim().slice(0, max);
+    return t || fallback;
+  }
   const tokenMetaCache = new Map();
   async function getTokenMeta(address) {
     const key = address.toLowerCase();
@@ -1065,7 +1069,9 @@
           token.decimals().catch(() => 18),
         ]);
       });
-      meta = { symbol, decimals: Number(decimals) };
+      // Symbols are chosen by whoever deployed the token, so treat them as untrusted:
+      // keep only plain characters before they are shown anywhere on the page.
+      meta = { symbol: cleanLabel(symbol, 16, "TOKEN"), decimals: Number(decimals) };
     } catch (e) { /* keep fallback */ }
     tokenMetaCache.set(key, meta);
     return meta;
