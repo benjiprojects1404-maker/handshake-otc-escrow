@@ -859,6 +859,16 @@
       </div>
     </div>
     <div class="field" style="margin-bottom:18px;">
+      <label style="font-size:13px; color: var(--ink);">Which tokens can cause problems?</label>
+      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+        Two kinds. <b>Tokens with a transfer tax</b> (they keep a percentage every time they move): you can't lock
+        one in an offer, but if you ask for one in return for your BDAG, you'll receive less than the amount you
+        asked for, by the size of the tax. <b>Tokens with a blocklist or pause switch</b>: if the token's owner
+        blocks the escrow contract or pauses the token, offers in that token can't be filled or cancelled until it's
+        unblocked. Handshake can't override a token's own rules. Check how a token behaves before you trade it.
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px;">
       <label style="font-size:13px; color: var(--ink);">What does this site collect about me?</label>
       <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
         Nothing is sent to us: there are no accounts, no sign-ups and no server of ours behind this page. Your browser talks directly to public BlockDAG RPC endpoints (listed under RPC status below) to read the chain and send transactions you sign, loads its code library from cdnjs and fonts from Google Fonts. Those services see a normal web request from your browser, as with any website. The only thing stored on your device is a note that you accepted the terms, kept in your browser's local storage.
