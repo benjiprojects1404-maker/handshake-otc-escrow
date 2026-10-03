@@ -33,6 +33,29 @@
     --danger: #ff6b6b;
     --danger-dim: rgba(255,107,107,0.12);
   }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #eef3fa;
+      --surface: #ffffff;
+      --surface-raised: #f4f7fc;
+      --line: rgba(16,36,72,0.12);
+      --line-strong: rgba(16,36,72,0.22);
+      --ink: #0c1626;
+      --ink-dim: rgba(12,22,38,0.70);
+      --ink-faint: rgba(12,22,38,0.50);
+      --give: #c94a28;
+      --give-dim: rgba(201,74,40,0.12);
+      --get: #087f9e;
+      --get-dim: rgba(8,127,158,0.12);
+      --private: #7a35e0;
+      --private-dim: rgba(122,53,224,0.12);
+      --danger: #c92f2f;
+      --danger-dim: rgba(201,47,47,0.10);
+    }
+  }
+  :root { color-scheme: dark; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { color-scheme: light; } }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -47,6 +70,23 @@
   }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 100px; }
   ::selection { background: var(--get); color: #08110a; }
+
+
+  /* ---- RPC status button + dialog (same pattern as Reef) ---- */
+  .rpcbtn { display:inline-flex; align-items:center; gap:7px; font: 500 12px 'Inter', sans-serif; color: var(--ink-dim);
+    padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; white-space: nowrap; }
+  .rpcbtn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .rpcbtn .rpcdot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
+  .rpcbtn.up .rpcdot { background: var(--get); box-shadow: 0 0 6px var(--get); }
+  .rpcbtn.warn .rpcdot { background: #e0a030; }
+  .rpcbtn.down .rpcdot { background: var(--danger); }
+  dialog.rpc-dialog { width: min(600px, 94vw); max-height: 86vh; padding: 0; border: 1px solid var(--line-strong); border-radius: 16px;
+    background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  dialog.rpc-dialog::backdrop { background: rgba(4,8,16,.55); backdrop-filter: blur(3px); }
+  dialog.rpc-dialog .panel { margin: 0 !important; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  dialog.rpc-dialog .dclose { background: transparent; border: 0; color: var(--ink-dim); font-size: 26px; line-height: 1; cursor: pointer; padding: 0 4px; }
+  dialog.rpc-dialog .dclose:hover { color: var(--ink); }
+  @media (max-width: 640px) { .rpcbtn { font-size: 11px; padding: 6px 9px; } header .header-right { flex-wrap: wrap; gap: 8px; max-width: 100%; } }
 
   /* ---- Header ---- */
   header {
@@ -622,6 +662,7 @@
       </div>
     </div>
     <div class="header-right">
+      <button type="button" class="rpcbtn" id="rpcBadge" aria-haspopup="dialog" aria-controls="rpcDialog"><span class="rpcdot"></span>RPC status</button>
       <div class="wallet-status">
         <span class="dot off" id="statusDot"></span>
         <span id="statusText">not connected</span>
@@ -887,10 +928,14 @@
     </div>
   </div>
 
+  <dialog id="rpcDialog" class="rpc-dialog" aria-labelledby="rpcDialogTitle">
   <div class="panel" style="margin-bottom:20px;">
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
-      <h3 style="margin-bottom:0;">RPC status</h3>
-      <button type="button" id="rpcCheckBtn" class="ghost-btn">Check now</button>
+      <h3 id="rpcDialogTitle" style="margin-bottom:0;">RPC status</h3>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" id="rpcCheckBtn" class="ghost-btn">Check now</button>
+        <button type="button" class="dclose" id="rpcClose" aria-label="Close">&times;</button>
+      </div>
     </div>
     <p style="font-size:12px; color: var(--ink-faint); margin: 4px 0 14px; line-height:1.6;">
       The list of public endpoints comes from the community's <a href="https://bdag.community/chain#nodes" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">node board</a>,
@@ -904,6 +949,7 @@
     <div id="rpcDivergenceSummary" style="font-size:12px; margin-bottom:12px;"></div>
     <div id="rpcStatusList" class="rpc-status-list"></div>
   </div>
+  </dialog>
 
   <footer>
     handshake · otc escrow · held by code, not by us · beta software, not independently audited · <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">security review</a> · <a href="https://explorer.bdagexplorer.com/address/0xD907701A2D96f7D0E7596b02737C9F36446cf5CA" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">verify contract source</a> before trading · <a href="#security" style="color:inherit; text-decoration:underline;">security</a> · <a href="/overview.pdf" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">overview brief (PDF)</a> · built by <a href="https://benjiprojects1404-services.pages.dev" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">benjiprojects1404</a> · not financial advice
@@ -1673,6 +1719,24 @@ details to be added here before this is used for real.]
   }
 
   document.getElementById("rpcCheckBtn").addEventListener("click", () => checkAllRpcs(true));
+  // Header RPC button: opens the status dialog; its dot shows the latest check result.
+  const rpcDialog = document.getElementById("rpcDialog");
+  document.getElementById("rpcBadge").addEventListener("click", () => { rpcDialog.showModal(); });
+  document.getElementById("rpcClose").addEventListener("click", () => rpcDialog.close());
+  rpcDialog.addEventListener("click", (e) => { if (e.target === rpcDialog) rpcDialog.close(); });
+  function updateRpcBadge() {
+    const badge = document.getElementById("rpcBadge");
+    const list = document.getElementById("rpcStatusList");
+    const up = list.querySelectorAll(".rpc-row.up").length;
+    const checking = list.querySelectorAll(".rpc-row.checking").length;
+    const warn = document.getElementById("rpcDivergenceSummary").classList.contains("rpc-divergence-warn");
+    badge.classList.remove("up", "warn", "down");
+    if (checking && !up) return;
+    badge.classList.add(warn ? "warn" : up ? "up" : "down");
+    badge.title = warn ? "RPCs disagree on recent blocks: open for details" : up ? `${up} RPC${up === 1 ? "" : "s"} online` : "No RPC reachable right now";
+  }
+  new MutationObserver(updateRpcBadge).observe(document.getElementById("rpcStatusList"), { subtree: true, attributes: true, childList: true });
+  new MutationObserver(updateRpcBadge).observe(document.getElementById("rpcDivergenceSummary"), { attributes: true, childList: true });
   checkAllRpcs();
 
   // ---- Load & render offers ----
