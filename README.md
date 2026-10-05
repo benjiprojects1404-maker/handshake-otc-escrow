@@ -10,7 +10,7 @@ other person. The contract's rules decide where it goes: to the taker on fill, b
 **Status: beta.** Unaudited, experimental software on an early-stage chain. Start with small amounts.
 
 - Website: https://handshakeotc.fyi
-- Explorer: https://explorer.bdagexplorer.com (the live contract is verified there)
+- Explorer: https://explorer.blockdag.engineering (the live contract's verified source is on explorer.bdagexplorer.com, linked from the site, until it can be verified on blockdag.engineering)
 
 ## Deployed contracts
 
