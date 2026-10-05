@@ -72,6 +72,17 @@
   ::selection { background: var(--get); color: #08110a; }
 
 
+  /* ---- Security & FAQ dropdowns (same pattern as Nodal) ---- */
+  details.qa { border: 1px solid var(--line); border-radius: 10px; background: var(--surface-raised); margin-bottom: 10px; }
+  details.qa:last-child { margin-bottom: 0; }
+  details.qa > summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  details.qa > summary::-webkit-details-marker { display: none; }
+  details.qa > summary::after { content: ""; flex-shrink: 0; width: 8px; height: 8px; border-right: 2px solid var(--ink-dim); border-bottom: 2px solid var(--ink-dim); transform: rotate(45deg); margin-top: -4px; transition: transform .15s ease; }
+  details.qa[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
+  details.qa > summary:hover { color: var(--get); }
+  details.qa .qa-a { padding: 0 16px 14px; font-size: 13px; line-height: 1.65; color: var(--ink-dim); }
+  @media (prefers-reduced-motion: reduce) { details.qa > summary::after { transition: none; } }
+
   /* ---- RPC status button + dialog (same pattern as Reef) ---- */
   .rpcbtn { display:inline-flex; align-items:center; gap:7px; font: 500 12px 'Inter', sans-serif; color: var(--ink-dim);
     padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; white-space: nowrap; }
@@ -673,7 +684,7 @@
 
   <div class="beta-banner">
     <span class="beta-banner-tag">BETA</span>
-    Experimental software on an early-stage chain. Source is published but not independently audited — start with small amounts. <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer">AI-assisted security review</a> · <a href="#faq-audit" onclick="document.getElementById('faq-audit').scrollIntoView({behavior:'smooth'}); return false;">Read more</a>
+    Experimental software on an early-stage chain. Source is published but not independently audited — start with small amounts. <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer">AI-assisted security review</a> · <a href="#faq-audit" onclick="var d=document.getElementById('faq-audit'); d.open=true; d.scrollIntoView({behavior:'smooth'}); return false;">Read more</a>
   </div>
 
   <div class="beta-banner" id="pausedBanner" style="display:none;">
@@ -838,59 +849,59 @@
 
   <div class="panel" style="margin-bottom:20px;" id="security">
     <h3>Security &amp; trust</h3>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">What nobody can do, including us</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    <details class="qa">
+      <summary>What nobody can do, including us</summary>
+      <div class="qa-a">
         The contract has no function that withdraws, rescues or redirects an open offer's assets. Once you lock BDAG or a token in an offer, only two things can happen to it: it goes to the taker when they fill your offer, or it comes back to you when you cancel. Nobody else, including the contract owner, can move it.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">What the contract owner can change</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>What the contract owner can change</summary>
+      <div class="qa-a">
         Only these settings: the fee (hard-capped in the contract at 3%), where fees are paid, per-offer beta limits, and pausing <em>new</em> offers. Each offer records the fee at the moment it's created, so a later fee change never affects an open offer. Pausing can't trap anyone: filling and cancelling existing offers always keep working.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">Who the owner is</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>Who the owner is</summary>
+      <div class="qa-a">
         A 2-of-2 multisig wallet (<a href="https://explorer.bdagexplorer.com/address/0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0x4E24…60fc</a>) controlled by two separate hardware wallets. Every owner action needs both to sign, so no single key can change anything.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">Check it yourself</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>Check it yourself</summary>
+      <div class="qa-a">
         The contract (<a href="https://explorer.bdagexplorer.com/address/0xD907701A2D96f7D0E7596b02737C9F36446cf5CA" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0xD907…f5CA</a>) is verified on explorer.bdagexplorer.com, so the published source is proven to match the deployed code. Read the <a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow/blob/main/Handshake_OTC_Escrow/contracts/OTCEscrow_v3.sol" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">source on GitHub</a>. It's also self-contained, with no external libraries or upgrade mechanism, so the code can't be swapped out later.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">Atomic by design</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>Atomic by design</summary>
+      <div class="qa-a">
         Both sides of a trade settle in the same transaction or not at all. There is no delivery step to dispute and no arbiter who could decide in someone's favour.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:0;">
-      <label style="font-size:13px; color: var(--ink);">Found a vulnerability?</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>Found a vulnerability?</summary>
+      <div class="qa-a">
         Please report it privately to <a href="mailto:security@handshakeotc.fyi" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">security@handshakeotc.fyi</a> rather than posting it publicly, so it can be fixed (or new offers paused) before anyone exploits it.
       </div>
-    </div>
+    </details>
   </div>
 
   <div class="panel" style="margin-bottom:20px;">
     <h3>FAQ</h3>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">Does this only work if both sides use the same currency?</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    <details class="qa">
+      <summary>Does this only work if both sides use the same currency?</summary>
+      <div class="qa-a">
         No — escrow doesn't require a matching currency on both sides. Every offer here already pairs two different
         assets: <span style="color:var(--give)">BDAG</span> on one side and any
         <span style="color:var(--get)">ERC-20 token</span> on the other. Just like modern cross-border escrow isn't
         limited to a single currency, this contract locks one asset and releases it only when the counter-asset is
         delivered — atomically, in the same transaction — so mismatched pairs settle just as safely as identical ones.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">Is "any ERC-20" actually safe to trust?</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>Is "any ERC-20" actually safe to trust?</summary>
+      <div class="qa-a">
         Handshake doesn't vet, allowlist, or restrict which ERC-20 contracts it accepts — it locks and releases
         whatever token address you or a counterparty enters. That flexibility cuts both ways: a non-standard or
         deliberately malicious token contract could report a successful transfer without behaving the way a normal
@@ -898,26 +909,26 @@
         symbol/decimals — it does not confirm the token is trustworthy. Only trade tokens you've independently
         verified yourself.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">Which tokens can cause problems?</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>Which tokens can cause problems?</summary>
+      <div class="qa-a">
         Two kinds. <b>Tokens with a transfer tax</b> (they keep a percentage every time they move): you can't lock
         one in an offer, but if you ask for one in return for your BDAG, you'll receive less than the amount you
         asked for, by the size of the tax. <b>Tokens with a blocklist or pause switch</b>: if the token's owner
         blocks the escrow contract or pauses the token, offers in that token can't be filled or cancelled until it's
         unblocked. Handshake can't override a token's own rules. Check how a token behaves before you trade it.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label style="font-size:13px; color: var(--ink);">What does this site collect about me?</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa">
+      <summary>What does this site collect about me?</summary>
+      <div class="qa-a">
         Nothing is sent to us: there are no accounts, no sign-ups and no server of ours behind this page. Your browser talks directly to public BlockDAG RPC endpoints (listed under RPC status below) to read the chain and send transactions you sign, loads its code library from cdnjs and fonts from Google Fonts. Those services see a normal web request from your browser, as with any website. The only thing stored on your device is a note that you accepted the terms, kept in your browser's local storage.
       </div>
-    </div>
-    <div class="field" style="margin-bottom:0;" id="faq-audit">
-      <label style="font-size:13px; color: var(--ink);">Has this contract been audited?</label>
-      <div class="hint" style="font-size:13px; line-height:1.65; margin-top:8px; color: var(--ink-dim);">
+    </details>
+    <details class="qa" id="faq-audit">
+      <summary>Has this contract been audited?</summary>
+      <div class="qa-a">
         Not by an independent auditor yet. On 2 October 2026 the escrow had an AI-assisted security review: read
         line by line, tested with attacks, and matched to its published source on chain. It found no critical, high
         or medium issues in the escrow; the low-severity ones that can affect you are explained in the FAQ above.
@@ -925,7 +936,7 @@
         can't rule out bugs. Handshake is experimental, beta software running on an early-stage chain. Treat every offer as something you could lose, and start with
         amounts you're fully comfortable putting at risk.
       </div>
-    </div>
+    </details>
   </div>
 
   <dialog id="rpcDialog" class="rpc-dialog" aria-labelledby="rpcDialogTitle">
