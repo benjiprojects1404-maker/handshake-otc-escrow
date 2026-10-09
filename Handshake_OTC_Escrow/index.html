@@ -870,7 +870,6 @@
   // status panel below also cross-checks the nodes live from the visitor's browser.
   const RPC_LIST_URL = "https://www.nodaldex.fyi/api/rpcs";
   const FALLBACK_RPC_URLS = [
-    "https://rpc.blockdag.engineering",
     "https://rpc.capedag.com",
     "https://rms-bdag-rpc.de/api/rpc-live",
     "https://rpc.dvdmining.com",
@@ -880,6 +879,7 @@
     "https://rpc.escrowhubs.io",
     "https://rpc.brazil.bdag-us.org",
     "https://rpc.bdagexplorer.com",
+    "https://rpc.blockdag.engineering",
   ];
   let RPC_URLS = FALLBACK_RPC_URLS.slice();
   let rpcFeed = null; // last live list: { rpcs, excluded, checkedAt }
