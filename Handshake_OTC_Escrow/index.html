@@ -34,6 +34,9 @@
     --private-dim: rgba(168,85,247,0.14);
     --danger: #ff6b6b;
     --danger-dim: rgba(255,107,107,0.12);
+    --dot-ok: #3fbf83;
+    --dot-warn: #f2b84b;
+    --dot-bad: #ff6b6b;
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
@@ -56,6 +59,9 @@
       --private-dim: rgba(122,53,224,0.12);
       --danger: #c92f2f;
       --danger-dim: rgba(201,47,47,0.10);
+      --dot-ok: #1a9b5f;
+      --dot-warn: #c98a0a;
+      --dot-bad: #c92f2f;
     }
   }
   :root { color-scheme: dark; }
@@ -92,9 +98,9 @@
     padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; white-space: nowrap; }
   .rpcbtn:hover { color: var(--ink); border-color: var(--line-strong); }
   .rpcbtn .rpcdot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
-  .rpcbtn.up .rpcdot { background: var(--get); box-shadow: 0 0 6px var(--get); }
-  .rpcbtn.warn .rpcdot { background: #e0a030; }
-  .rpcbtn.down .rpcdot { background: var(--danger); }
+  .rpcbtn.up .rpcdot { background: var(--dot-ok); box-shadow: 0 0 6px var(--dot-ok); }
+  .rpcbtn.warn .rpcdot { background: var(--dot-warn); }
+  .rpcbtn.down .rpcdot { background: var(--dot-bad); }
   dialog.rpc-dialog { width: min(600px, 94vw); max-height: 86vh; padding: 0; border: 1px solid var(--line-strong); border-radius: 16px;
     background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.45); }
   dialog.rpc-dialog::backdrop { background: rgba(4,8,16,.55); backdrop-filter: blur(3px); }
@@ -381,11 +387,11 @@
     background: var(--surface);
   }
   .rpc-row .rpc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--ink-faint); }
-  .rpc-row.up .rpc-dot { background: var(--get); box-shadow: 0 0 6px var(--get); }
-  .rpc-row.down .rpc-dot { background: var(--give); }
-  .rpc-row.blocked .rpc-dot { background: var(--ink-faint); }
+  .rpc-row.up .rpc-dot { background: var(--dot-ok); box-shadow: 0 0 6px var(--dot-ok); }
+  .rpc-row.down .rpc-dot { background: var(--dot-bad); }
+  .rpc-row.blocked .rpc-dot { background: var(--dot-warn); }
   .rpc-row .rpc-latency { text-align: right; }
-  .rpc-row.checking .rpc-dot { background: var(--private); animation: arrowPulse 1.2s ease-in-out infinite; }
+  .rpc-row.checking .rpc-dot { background: var(--ink-faint); animation: arrowPulse 1.2s ease-in-out infinite; }
   .rpc-row .rpc-url { color: var(--ink); flex: 1; word-break: break-all; }
   .rpc-row .rpc-latency { color: var(--ink-faint); font-size: 11px; white-space: nowrap; }
   .rpc-row.active { border-color: rgba(55,211,244,0.4); }
