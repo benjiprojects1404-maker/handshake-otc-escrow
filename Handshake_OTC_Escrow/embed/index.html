@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handshake OTC Widget</title>
+<meta name="description" content="Show open Handshake OTC offers for your token on your own site. Paste one line of HTML; offers link back to handshakeotc.fyi to fill.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#0b1a1e;--surface:#0e1f24;--raised:#12262c;--line:rgba(150,210,225,.14);--ink:#e7f3f5;--dim:rgba(231,243,245,.68);--faint:rgba(231,243,245,.46);--accent:#b794f6;--give:#ff8b6a;--get:#37d3f4}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f5fcfd;--surface:#ffffff;--raised:#eef7f9;--line:rgba(6,40,46,.14);--ink:#0b1f24;--dim:rgba(11,31,36,.72);--faint:rgba(11,31,36,.52);--accent:#6d3ad0;--give:#c2410c;--get:#087f9e}}
+:root[data-theme="light"]{--bg:#f5fcfd;--surface:#ffffff;--raised:#eef7f9;--line:rgba(6,40,46,.14);--ink:#0b1f24;--dim:rgba(11,31,36,.72);--faint:rgba(11,31,36,.52);--accent:#6d3ad0;--give:#c2410c;--get:#087f9e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--accent)}
+.w{padding:12px}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.head b{font-size:15px}
+.head a{font-size:12px}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.trade{font:600 13px ui-monospace,"JetBrains Mono",monospace}
+.trade .g{color:var(--give)} .trade .t{color:var(--get)}
+.meta{font-size:11.5px;color:var(--faint)}
+.btn{flex:none;font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--accent);color:var(--accent);padding:5px 10px;border-radius:8px;white-space:nowrap}
+.empty{color:var(--faint);font-size:13px;padding:14px 0;text-align:center}
+.foot{font-size:11px;color:var(--faint);margin-top:6px}
+/* builder */
+.builder{max-width:720px;margin:0 auto;padding:28px 16px 48px}
+.builder h1{font-size:26px;margin:0 0 8px}
+.builder p{color:var(--dim)}
+.builder label{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
+.builder input,.builder select{width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--raised);color:var(--ink)}
+.builder .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.builder textarea{width:100%;min-height:86px;font:12.5px ui-monospace,monospace;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--raised);color:var(--ink)}
+.builder button{margin-top:8px;font:600 13px system-ui;padding:8px 14px;border-radius:9px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.builder .preview{border:1px dashed var(--line);border-radius:12px;margin-top:16px;overflow:hidden}
+.builder .note{font-size:12.5px;color:var(--faint)}
+@media (max-width:520px){.builder .row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
+<script>
+(function () {
+  const ESCROW = "0xD907701A2D96f7D0E7596b02737C9F36446cf5CA";
+  const SITE = "https://handshakeotc.fyi";
+  const RPCS = ["https://rpc.capedag.com", "https://rms-bdag-rpc.de/api/rpc-live", "https://rpc.dvdmining.com", "https://rpc.cms-mining-pool.net",
+    "https://rpc.england.bdag-us.org", "https://rpc.dagcore.net", "https://rpc.escrowhubs.io", "https://rpc.brazil.bdag-us.org",
+    "https://rpc.bdagexplorer.com", "https://rpc.blockdag.engineering"];
+  const ABI = ["function totalOffers() view returns (uint256)",
+    "function getOffer(uint256) view returns (address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint16 feeBpsAtCreation)"];
+  const ERC20 = ["function symbol() view returns (string)", "function decimals() view returns (uint8)"];
+  const app = document.getElementById("app");
+  const q = new URLSearchParams(location.search);
+  const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const theme = q.get("theme");
+  if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+  const fmt = (x) => { if (!isFinite(x)) return "0"; const a = Math.abs(x); return a >= 1000 ? x.toLocaleString("en-US", { maximumFractionDigits: 2 }) : a >= 1 ? x.toLocaleString("en-US", { maximumFractionDigits: 4 }) : x.toPrecision(4).replace(/(\.\d*?)0+$/, "$1"); };
+
+  // Ask every node at once; use the first that answers (6 s each).
+  async function pickProvider() {
+    return Promise.any(RPCS.map(async (u) => {
+      const p = new ethers.JsonRpcProvider(u, 1404, { staticNetwork: true });
+      await Promise.race([p.getCode(ESCROW).then((c) => { if (c === "0x") throw new Error("no escrow here"); }), new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 6000))]);
+      return p;
+    }));
+  }
+  async function openOffers(p, token, limit) {
+    const c = new ethers.Contract(ESCROW, ABI, p);
+    const total = Number(await c.totalOffers());
+    const out = [];
+    // Newest first, 20 at a time in parallel, looking back at most 400 offers.
+    for (let id = total; id >= 1 && out.length < limit && total - id < 400; id -= 20) {
+      const ids = []; for (let k = id; k > id - 20 && k >= 1; k--) ids.push(k);
+      const got = await Promise.all(ids.map((i) => c.getOffer(i).then((o) => ({ id: i, o })).catch(() => null)));
+      for (const g of got) {
+        if (!g || Number(g.o.status) !== 1) continue;
+        if (g.o.taker !== ethers.ZeroAddress) continue; // private offers stay private
+        if (token && g.o.token.toLowerCase() !== token) continue;
+        out.push(g);
+        if (out.length >= limit) break;
+      }
+    }
+    return out;
+  }
+
+  async function widget(token, limit) {
+    app.innerHTML = '<div class="w"><div class="empty">Loading offers…</div></div>';
+    try {
+      const p = await pickProvider();
+      let sym = "token", dec = 18;
+      if (token) {
+        const t = new ethers.Contract(token, ERC20, p);
+        [sym, dec] = await Promise.all([t.symbol().catch(() => "token"), t.decimals().then(Number).catch(() => 18)]);
+        sym = String(sym).replace(/[^A-Za-z0-9 ._-]/g, "").slice(0, 16) || "token";
+      }
+      const offers = await openOffers(p, token, limit);
+      const meta = {};
+      await Promise.all([...new Set(offers.map((g) => g.o.token.toLowerCase()))].map(async (a) => {
+        if (token && a === token) { meta[a] = { sym, dec }; return; }
+        const t = new ethers.Contract(a, ERC20, p);
+        const [s, d] = await Promise.all([t.symbol().catch(() => "token"), t.decimals().then(Number).catch(() => 18)]);
+        meta[a] = { sym: String(s).replace(/[^A-Za-z0-9 ._-]/g, "").slice(0, 16) || "token", dec: d };
+      }));
+      const cards = offers.map(({ id, o }) => {
+        const m = meta[o.token.toLowerCase()];
+        const nat = Number(ethers.formatEther(o.amountNative)), tok = Number(ethers.formatUnits(o.amountToken, m.dec));
+        // Worded for the visitor: a maker giving BDAG is someone the visitor can sell the token to.
+        const what = o.makerGivesNative
+          ? `Sell <span class="t">${fmt(tok)} ${esc(m.sym)}</span> for <span class="g">${fmt(nat)} BDAG</span>`
+          : `Buy <span class="t">${fmt(tok)} ${esc(m.sym)}</span> for <span class="g">${fmt(nat)} BDAG</span>`;
+        const side = `1 ${esc(m.sym)} = ${fmt(nat / tok)} BDAG`;
+        return `<div class="card"><div><div class="trade">${what}</div><div class="meta">${side} · offer #${id}</div></div><a class="btn" href="${SITE}/#offer=${id}" target="_blank" rel="noopener">View &amp; fill</a></div>`;
+      });
+      const title = token ? `Open OTC offers for ${esc(sym)}` : "Open OTC offers";
+      app.innerHTML = `<div class="w"><div class="head"><b>${title}</b><a href="${SITE}/" target="_blank" rel="noopener">Handshake OTC</a></div>` +
+        (cards.length ? cards.join("") : `<div class="empty">No open offers${token ? " for " + esc(sym) : ""} right now. <a href="${SITE}/" target="_blank" rel="noopener">Post one on Handshake</a>.</div>`) +
+        `<div class="foot">Peer-to-peer escrow on chain 1404. Unaudited beta: check the token address before you trade. Not for US/UK persons.</div></div>`;
+    } catch (e) {
+      app.innerHTML = `<div class="w"><div class="empty">Couldn't reach the chain right now. <a href="${SITE}/" target="_blank" rel="noopener">Open Handshake</a>.</div></div>`;
+    }
+  }
+
+  function builder() {
+    document.title = "Handshake OTC widget";
+    app.innerHTML = `<div class="builder">
+      <h1>Handshake OTC widget</h1>
+      <p>Show open Handshake offers for your token on your own site. Paste one line of HTML; each offer links back to handshakeotc.fyi, where the buyer connects their wallet and fills it. The widget only reads the chain: it never asks for a wallet or holds anything.</p>
+      <label for="b-token">Token contract address (chain 1404)</label>
+      <input id="b-token" placeholder="0x… leave blank to show offers for every token" spellcheck="false" autocomplete="off">
+      <div class="row">
+        <div><label for="b-limit">Offers to show</label><select id="b-limit"><option>3</option><option selected>5</option><option>10</option></select></div>
+        <div><label for="b-theme">Theme</label><select id="b-theme"><option value="">Follow the visitor's setting</option><option value="dark">Dark</option><option value="light">Light</option></select></div>
+      </div>
+      <label for="b-code">Embed code</label>
+      <textarea id="b-code" readonly></textarea>
+      <button type="button" id="b-copy">Copy code</button>
+      <p class="note">Private offers (restricted to one address) are never shown in the widget. Trades go through the same escrow contract and 0.25% fee as on handshakeotc.fyi.</p>
+      <div class="preview" id="b-preview"></div>
+    </div>`;
+    const tokenEl = document.getElementById("b-token"), limitEl = document.getElementById("b-limit"), themeEl = document.getElementById("b-theme");
+    const codeEl = document.getElementById("b-code"), prev = document.getElementById("b-preview");
+    let t = null;
+    function update() {
+      const tok = tokenEl.value.trim();
+      const ok = !tok || ethers.isAddress(tok);
+      const params = new URLSearchParams();
+      if (tok && ok) params.set("token", tok);
+      params.set("limit", limitEl.value);
+      if (themeEl.value) params.set("theme", themeEl.value);
+      const src = `${SITE}/embed/?${params.toString()}`;
+      const h = 90 + Number(limitEl.value) * 70;
+      codeEl.value = ok ? `<iframe src="${src}" width="100%" height="${h}" style="border:0;max-width:520px" title="Handshake OTC offers" loading="lazy"></iframe>` : "Enter a valid token address, or leave it blank.";
+      clearTimeout(t);
+      t = setTimeout(() => { prev.innerHTML = ok ? `<iframe src="${location.pathname}?${params.toString()}" width="100%" height="${h}" style="border:0;display:block" title="Preview"></iframe>` : ""; }, 400);
+    }
+    [tokenEl, limitEl, themeEl].forEach((e) => e.addEventListener("input", update));
+    document.getElementById("b-copy").addEventListener("click", async (e) => {
+      try { await navigator.clipboard.writeText(codeEl.value); e.target.textContent = "Copied"; } catch (err) { codeEl.select(); e.target.textContent = "Select and copy"; }
+      setTimeout(() => { e.target.textContent = "Copy code"; }, 1800);
+    });
+    update();
+  }
+
+  const tokenParam = (q.get("token") || "").trim();
+  const limit = Math.min(10, Math.max(1, parseInt(q.get("limit") || "5", 10) || 5));
+  if (q.has("token") || q.has("limit") || q.has("theme")) widget(ethers.isAddress(tokenParam) ? tokenParam.toLowerCase() : "", limit);
+  else builder();
+})();
+</script>
+</body>
+</html>
