@@ -474,6 +474,17 @@
   .offer-reef a { color: inherit; }
   .price-check { font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); margin: -4px 0 14px; }
   .price-check:empty { display: none; }
+  .quickpick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .quickpick:empty { display: none; }
+  .quickpick .qp-label { font-size: 11px; color: var(--ink-faint); align-self: center; }
+  .quickpick button { background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink-dim); font: 600 11.5px 'JetBrains Mono', monospace; padding: 3px 9px; border-radius: 6px; cursor: pointer; }
+  .quickpick button:hover { color: var(--ink); border-color: var(--line-strong); }
+  .bal-hint { font-size: 11.5px; color: var(--ink-faint); margin: -6px 0 12px; }
+  .bal-hint:empty { display: none; }
+  .bal-hint button { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0 0 0 6px; text-decoration: underline; }
+  .list-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .list-controls select { background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink-dim); font: 600 12px 'Instrument Sans', sans-serif; padding: 6px 8px; border-radius: 7px; }
+  .new-badge { font-size: 10px; font-weight: 700; letter-spacing: .4px; padding: 3px 8px; border-radius: 20px; background: var(--accent-dim, rgba(168,85,247,.15)); color: var(--accent); margin-left: 6px; }
   .price-check .pc-rate { font-family: 'JetBrains Mono', monospace; color: var(--ink); }
   .price-check.warn { color: var(--danger); }
   .price-check.note { color: var(--dot-warn); }
@@ -719,6 +730,7 @@
           same token on a different chain will have a different address and won't work here.
         </div>
         <div class="hint" id="tokenSymbolHint"></div>
+        <div class="quickpick" id="quickPick" aria-label="Tokens with a Reef pool"></div>
       </div>
 
       <div class="row-2">
@@ -731,6 +743,7 @@
           <input type="text" id="amountTokenInput" placeholder="0.0">
         </div>
       </div>
+      <div class="bal-hint" id="balanceHint"></div>
 
       <div class="field">
         <label>Restrict to a specific address (optional)</label>
@@ -749,11 +762,21 @@
         <button class="tab-btn active" id="tabAll" type="button">All open</button>
         <button class="tab-btn" id="tabMine" type="button">My offers</button>
       </div>
-      <button class="btn btn-outline btn-sm" id="refreshBtn" style="margin-bottom:14px;">Refresh</button>
+      <div class="list-controls">
+        <button class="btn btn-outline btn-sm" id="refreshBtn">Refresh</button>
+        <select id="tokFilter" aria-label="Filter by token"><option value="">All tokens</option></select>
+        <select id="sortSel" aria-label="Sort offers">
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="big">Largest BDAG amount</option>
+          <option value="reef">Best for taker vs Reef</option>
+        </select>
+      </div>
       <div class="shared-wrap" id="sharedOffer" style="display:none"></div>
       <div class="offer-list" id="offerList">
         <div class="gallery-empty">Connect your wallet to load offers.</div>
       </div>
+      <button class="btn btn-outline btn-sm" id="loadMoreBtn" style="display:none;margin-top:12px;">Load more</button>
     </div>
   </div>
 
@@ -1070,6 +1093,10 @@
   let provider, signer, userAddress, contract;
   let direction = "giveNative"; // or "giveToken"
   let currentTab = "all";
+  // Offer list state (declared early: loadOffers runs during start-up).
+  const PAGE = 30, BATCH = 20;
+  let freshIds = new Set();
+  let offerCache = new Map(), offerTotal = 0, scanCursor = 0, shownCount = PAGE, reefPctById = new Map(), loadSeq = 0;
 
   function friendlyError(err) {
     const raw = err?.reason || err?.shortMessage || err?.message || String(err);
@@ -1205,6 +1232,7 @@ details to be added here before this is used for real.]
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
     contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    setTimeout(() => { try { updateBalanceHint(); } catch (e) {} }, 0);
 
     document.getElementById("connectBtn").textContent = userAddress.slice(0,6) + "…" + userAddress.slice(-4);
     document.getElementById("statusDot").classList.remove("off");
@@ -1464,6 +1492,62 @@ details to be added here before this is used for real.]
   ["tokenAddrInput", "amountNativeInput", "amountTokenInput"].forEach((id) => document.getElementById(id).addEventListener("input", schedulePriceCheck));
   [dirGiveNativeBtn, dirGiveTokenBtn].forEach((b) => b.addEventListener("click", schedulePriceCheck));
 
+  // ---- Quick-pick tokens (those with a BDAG pool on Reef) and the balance you'd be offering ----
+  const REEF_FACTORY = "0x9603042044b6B1A1637c508F731ba01219142239";
+  async function loadQuickPick() {
+    const box = document.getElementById("quickPick");
+    try {
+      const list = await withReadFallback(async (p) => {
+        const f = new ethers.Contract(REEF_FACTORY, ["function allPairsLength() view returns (uint256)", "function allPairs(uint256) view returns (address)"], p);
+        const n = Math.min(Number(await f.allPairsLength()), 100);
+        const pairs = await Promise.all(Array.from({ length: n }, (_, i) => f.allPairs(i)));
+        const w = REEF.WBDAG.toLowerCase(), out = new Set();
+        await Promise.all(pairs.map(async (pa) => {
+          const c = new ethers.Contract(pa, ["function token0() view returns (address)", "function token1() view returns (address)", "function getReserves() view returns (uint112,uint112,uint32)"], p);
+          const [t0, t1, r] = await Promise.all([c.token0(), c.token1(), c.getReserves()]);
+          if (r[0] === 0n || r[1] === 0n) return; // empty pool
+          if (t0.toLowerCase() === w) out.add(t1); else if (t1.toLowerCase() === w) out.add(t0);
+        }));
+        return [...out];
+      });
+      const metas = await Promise.all(list.map(async (a) => ({ a, m: await getTokenMeta(a) })));
+      const good = metas.filter((x) => x.m.symbol !== "TOKEN").sort((x, y) => x.m.symbol.localeCompare(y.m.symbol));
+      if (!good.length) return;
+      box.innerHTML = '<span class="qp-label">Tokens with a Reef pool:</span>' + good.map((x) => `<button type="button" data-addr="${x.a}" title="${x.a}">${escHtml(x.m.symbol)}</button>`).join("");
+      box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+        const inp = document.getElementById("tokenAddrInput");
+        inp.value = b.dataset.addr;
+        inp.dispatchEvent(new Event("input", { bubbles: true }));
+      }));
+    } catch (e) { box.innerHTML = ""; }
+  }
+  let balSeq = 0;
+  async function updateBalanceHint() {
+    const el = document.getElementById("balanceHint"), seq = ++balSeq;
+    if (!userAddress) { el.innerHTML = ""; return; }
+    try {
+      if (direction === "giveNative") {
+        const bal = await withReadFallback((p) => p.getBalance(userAddress));
+        if (seq !== balSeq) return;
+        const v = ethers.formatEther(bal);
+        el.innerHTML = `You have ${fmtNum(Number(v))} ${NATIVE_SYMBOL} (keep a little for gas).`;
+      } else {
+        const addr = document.getElementById("tokenAddrInput").value.trim();
+        if (!ethers.isAddress(addr)) { el.innerHTML = ""; return; }
+        const meta = await getTokenMeta(addr);
+        const bal = await withReadFallback((p) => new ethers.Contract(addr, ERC20_ABI, p).balanceOf(userAddress));
+        if (seq !== balSeq) return;
+        const v = ethers.formatUnits(bal, meta.decimals);
+        el.innerHTML = `You have ${fmtNum(Number(v))} ${escHtml(meta.symbol)}.<button type="button" id="useMaxTok">Use all</button>`;
+        document.getElementById("useMaxTok").addEventListener("click", () => {
+          const t = document.getElementById("amountTokenInput"); t.value = v; t.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      }
+    } catch (e) { if (seq === balSeq) el.innerHTML = ""; }
+  }
+  document.getElementById("tokenAddrInput").addEventListener("input", () => setTimeout(updateBalanceHint, 300));
+  [dirGiveNativeBtn, dirGiveTokenBtn].forEach((b) => b.addEventListener("click", updateBalanceHint));
+
   // ---- Create offer ----
   document.getElementById("createBtn").addEventListener("click", async () => {
     const statusEl = document.getElementById("createStatus");
@@ -1631,6 +1715,8 @@ details to be added here before this is used for real.]
     const out = await withReadFallback((p) => router(p).getAmountsOut(o.amountNative, [REEF.WBDAG, o.token]));
     return { reef: out[out.length - 1], here: o.amountToken, unit: meta.symbol, decimals: meta.decimals, verb: "receive" };
   }
+  let reefResortTimer = null;
+  function scheduleReefResort() { clearTimeout(reefResortTimer); reefResortTimer = setTimeout(renderOfferList, 400); }
   async function fillReefComparisons(rows) {
     await Promise.all(rows.filter((r) => r.status === "Open").map(async (r) => {
       const els = document.querySelectorAll(`[data-reef-id="${r.id}"]`);
@@ -1649,6 +1735,9 @@ details to be added here before this is used for real.]
         const c = await reefComparison(r.o, meta);
         if (c.reef > 0n) {
           const pct = (Number(c.here - c.reef) / Number(c.reef)) * 100;
+          const firstTime = !reefPctById.has(r.id);
+          reefPctById.set(r.id, pct);
+          if (firstTime && document.getElementById("sortSel").value === "reef") scheduleReefResort();
           const amt = `${fmtNum(Number(ethers.formatUnits(c.here, c.decimals)))} ${escHtml(c.unit)} here vs ${fmtNum(Number(ethers.formatUnits(c.reef, c.decimals)))} on Reef`;
           if (Math.abs(pct) < 0.5) html = `About the same as swapping on <a href="https://reefdex.fyi/" target="_blank" rel="noopener">Reef</a> right now (${amt}).`;
           else { cls = pct > 0 ? "better" : "worse"; html = `For the taker: ${Math.abs(pct).toFixed(1)}% ${pct > 0 ? "more" : "less"} than swapping the same amount on <a href="https://reefdex.fyi/" target="_blank" rel="noopener">Reef</a> right now (${amt}).`; }
@@ -1691,6 +1780,7 @@ details to be added here before this is used for real.]
   refreshStats();
   loadOffers();
   showSharedOffer();
+  loadQuickPick();
   loadTradeHistory();
 
   // ---- Live RPC status panel — checks each RPC directly from this browser ----
@@ -1838,50 +1928,106 @@ details to be added here before this is used for real.]
   checkAllRpcs();
 
   // ---- Load & render offers ----
-  async function loadOffers() {
+  // Offers are read newest first, 20 at a time in parallel, and kept in a cache so filters,
+  // sorting and "Load more" don't re-read the chain. Refresh or switching tabs reloads.
+  function rowMatches(r) {
+    if (r.status === "None") return false;
+    if (currentTab === "mine") {
+      const me = (userAddress || "").toLowerCase();
+      if (r.o.maker.toLowerCase() !== me && r.o.taker.toLowerCase() !== me) return false;
+    } else if (r.status !== "Open") return false;
+    const f = document.getElementById("tokFilter").value;
+    return !f || r.o.token.toLowerCase() === f;
+  }
+  function filteredRows() {
+    const rows = [...offerCache.values()].filter(rowMatches);
+    const by = document.getElementById("sortSel").value;
+    if (by === "old") rows.sort((x, y) => x.id - y.id);
+    else if (by === "big") rows.sort((x, y) => (y.o.amountNative > x.o.amountNative ? 1 : y.o.amountNative < x.o.amountNative ? -1 : y.id - x.id));
+    else if (by === "reef") rows.sort((x, y) => (reefPctById.has(y.id) ? reefPctById.get(y.id) : -1e9) - (reefPctById.has(x.id) ? reefPctById.get(x.id) : -1e9) || y.id - x.id);
+    else rows.sort((x, y) => y.id - x.id);
+    return rows;
+  }
+  async function scanMore(need, seq) {
+    // Read further back until `need` matching offers are cached or every offer has been read.
+    while (scanCursor >= 1 && [...offerCache.values()].filter(rowMatches).length < need) {
+      const ids = [];
+      for (let id = scanCursor; id >= 1 && ids.length < BATCH; id--) ids.push(id);
+      scanCursor -= ids.length;
+      const got = await Promise.all(ids.map((id) => withReadFallback((p) => getReadContract(p).getOffer(id)).then((o) => ({ id, o })).catch(() => null)));
+      if (seq !== loadSeq) return false;
+      got.forEach((g) => { if (g) offerCache.set(g.id, { id: g.id, o: g.o, status: STATUS_LABEL[Number(g.o.status)] || "None" }); });
+    }
+    return true;
+  }
+  function updateTokenFilter() {
+    const sel = document.getElementById("tokFilter"), cur = sel.value;
+    const seen = new Map();
+    offerCache.forEach((r) => { const k = r.o.token.toLowerCase(); if (!seen.has(k)) seen.set(k, (tokenMetaCache.get(k) || {}).symbol || k.slice(0, 6) + "…" + k.slice(-4)); });
+    sel.innerHTML = '<option value="">All tokens</option>' + [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, sym]) => `<option value="${k}">${escHtml(sym)}</option>`).join("");
+    sel.value = seen.has(cur) ? cur : "";
+  }
+  // "Filled since your last visit": remembered per wallet in this browser only.
+  function seenKey() { return "hs_seen_filled_" + (userAddress || "").toLowerCase(); }
+  function loadSeen() { try { return new Set(JSON.parse(localStorage.getItem(seenKey()) || "[]")); } catch (e) { return new Set(); } }
+  function saveSeen(set) { try { localStorage.setItem(seenKey(), JSON.stringify([...set].slice(-500))); } catch (e) {} }
+  function newlyFilledIds() {
+    if (!userAddress) return [];
+    const me = userAddress.toLowerCase(), seen = loadSeen();
+    return [...offerCache.values()].filter((r) => r.status === "Filled" && r.o.maker.toLowerCase() === me && !seen.has(r.id)).map((r) => r.id);
+  }
+  function updateMineTab() {
+    const n = newlyFilledIds().length;
+    document.getElementById("tabMine").textContent = n ? `My offers (${n} filled)` : "My offers";
+  }
+  function renderOfferList() {
+    const listEl = document.getElementById("offerList");
+    const rows = filteredRows();
+    const show = rows.slice(0, shownCount);
+    const fresh = currentTab === "mine" ? freshIds : new Set();
+    const cards = show.map((r) => {
+      let html = renderOfferCard(r.id, r.o, r.status, tokenMetaCache.get(r.o.token.toLowerCase()));
+      if (fresh.has(r.id)) html = html.replace(`<span class="offer-id">#${r.id}</span>`, `<span class="offer-id">#${r.id}<span class="new-badge">filled since your last visit</span></span>`);
+      return html;
+    });
+    listEl.innerHTML = cards.length ? cards.join("") : `<div class="gallery-empty">${currentTab === "mine" ? "You have no offers yet." : "No open offers right now. Post one with the form."}</div>`;
+    document.getElementById("loadMoreBtn").style.display = rows.length > shownCount || scanCursor >= 1 ? "" : "none";
+    attachOfferActions();
+    fillReefComparisons(show);
+    updateMineTab();
+  }
+  async function loadOffers(more) {
     const listEl = document.getElementById("offerList");
     if (currentTab === "mine" && !userAddress) {
       listEl.innerHTML = '<div class="gallery-empty">Connect your wallet to see your offers.</div>';
+      document.getElementById("loadMoreBtn").style.display = "none";
       return;
     }
-
-    listEl.innerHTML = '<div class="gallery-empty">Loading offers from the chain…</div>';
+    const seq = ++loadSeq;
+    if (!more) {
+      listEl.innerHTML = '<div class="gallery-empty">Loading offers from the chain…</div>';
+      offerCache = new Map(); reefPctById = new Map(); shownCount = PAGE;
+    } else shownCount += PAGE;
     try {
-      const total = Number(await withReadFallback(p => getReadContract(p).totalOffers()));
-      const rows = [];
-
-      for (let id = total; id >= 1 && rows.length < 30; id--) {
-        const o = await withReadFallback(p => getReadContract(p).getOffer(id));
-        const status = STATUS_LABEL[Number(o.status)] || "None";
-        if (status === "None") continue;
-
-        if (currentTab === "mine") {
-          const isMine = o.maker.toLowerCase() === userAddress.toLowerCase() ||
-                         o.taker.toLowerCase() === userAddress.toLowerCase();
-          if (!isMine) continue;
-        } else {
-          if (status !== "Open") continue;
-        }
-
-        rows.push({ id, o, status });
-      }
-
-      // Fetch each unique token's symbol/decimals once, in parallel, before rendering
-      const uniqueTokens = [...new Set(rows.map(r => r.o.token.toLowerCase()))];
+      if (!more) { offerTotal = Number(await withReadFallback((p) => getReadContract(p).totalOffers())); scanCursor = offerTotal; }
+      if (!(await scanMore(shownCount, seq))) return;
+      const uniqueTokens = [...new Set([...offerCache.values()].map((r) => r.o.token.toLowerCase()))];
       await Promise.all(uniqueTokens.map(getTokenMeta));
-
-      const cards = rows.map(r => renderOfferCard(r.id, r.o, r.status, tokenMetaCache.get(r.o.token.toLowerCase())));
-
-      listEl.innerHTML = cards.length
-        ? cards.join("")
-        : '<div class="gallery-empty">Nothing here yet.</div>';
-
-      attachOfferActions();
-      fillReefComparisons(rows);
+      if (seq !== loadSeq) return;
+      if (currentTab === "mine" && !more) {
+        // Badge offers filled since the last visit, then remember them as seen (the badge stays until the next reload).
+        freshIds = new Set(newlyFilledIds());
+        const seen = loadSeen(); freshIds.forEach((id) => seen.add(id)); saveSeen(seen);
+      }
+      updateTokenFilter();
+      renderOfferList();
     } catch (err) {
       listEl.innerHTML = `<div class="gallery-empty">Could not load offers: ${friendlyError(err)}</div>`;
     }
   }
+  document.getElementById("loadMoreBtn").addEventListener("click", () => loadOffers(true));
+  document.getElementById("tokFilter").addEventListener("change", async () => { shownCount = PAGE; const seq = loadSeq; await scanMore(shownCount, seq); renderOfferList(); });
+  document.getElementById("sortSel").addEventListener("change", () => renderOfferList());
 
   function renderOfferCard(id, o, status, tokenMeta) {
     const nativeAmt = ethers.formatEther(o.amountNative);
