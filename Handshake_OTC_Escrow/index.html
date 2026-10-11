@@ -1363,16 +1363,11 @@ details to be added here before this is used for real.]
       tokenSymbolHint.className = "hint";
       return;
     }
-    if (!provider) {
-      tokenSymbolHint.textContent = "Connect your wallet to auto-check this address.";
-      tokenSymbolHint.className = "hint";
-      return;
-    }
-
     tokenSymbolHint.textContent = "Checking this address on chain 1404…";
     tokenSymbolHint.className = "hint";
     try {
-      const code = await provider.getCode(val);
+      // Uses the read-only connection, so the check works before a wallet is connected.
+      const code = await withReadFallback((p) => p.getCode(val));
       if (seq !== tokenCheckSeq) return; // a newer keystroke has already superseded this check
       if (code === "0x") {
         tokenSymbolHint.textContent = "⚠ No contract found at this address on chain 1404 — check the address and that you're on the right network.";
