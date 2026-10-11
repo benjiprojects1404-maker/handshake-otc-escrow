@@ -466,7 +466,17 @@
   }
   .token-tag .copy-btn:hover { color: var(--ink); border-color: var(--line-strong); }
   .offer-meta .private-tag { color: var(--private); }
-  .offer-actions { margin-top: 12px; display: flex; gap: 8px; }
+  .offer-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .offer-rate { font-size: 12px; color: var(--ink-dim); margin: 2px 0 4px; font-family: 'JetBrains Mono', monospace; }
+  .offer-reef { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+  .offer-reef.better { color: var(--get); }
+  .offer-reef.worse { color: var(--danger); }
+  .offer-reef a { color: inherit; }
+  .link-btn { background: none; border: 1px solid var(--line); color: var(--ink-dim); font-size: 11.5px; padding: 3px 9px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+  .link-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .offer-card.shared { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .shared-wrap { margin-bottom: 16px; }
+  .shared-wrap .shared-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink-dim); margin-bottom: 8px; }
   .gallery-empty { color: var(--ink-faint); font-size: 13px; padding: 30px 0; text-align: center; }
 
   .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
@@ -731,6 +741,7 @@
         <button class="tab-btn" id="tabMine" type="button">My offers</button>
       </div>
       <button class="btn btn-outline btn-sm" id="refreshBtn" style="margin-bottom:14px;">Refresh</button>
+      <div class="shared-wrap" id="sharedOffer" style="display:none"></div>
       <div class="offer-list" id="offerList">
         <div class="gallery-empty">Connect your wallet to load offers.</div>
       </div>
@@ -1490,10 +1501,101 @@ details to be added here before this is used for real.]
   }
   document.getElementById("refreshBtn").addEventListener("click", () => { loadOffers(); loadTradeHistory(); });
 
+
+  // ---- Offer rate, age, share links and Reef comparison (front end only, read-only) ----
+  function fmtNum(x) {
+    if (!isFinite(x) || x === 0) return "0";
+    const a = Math.abs(x);
+    if (a >= 1000) return x.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    if (a >= 1) return x.toLocaleString("en-US", { maximumFractionDigits: 4 });
+    return x.toPrecision(4).replace(/\.?0+e/, "e").replace(/(\.\d*?)0+$/, "$1");
+  }
+  // Price of one token in BDAG, from the offer's two amounts.
+  function offerRateText(o, meta) {
+    const nat = Number(ethers.formatEther(o.amountNative));
+    const tok = Number(ethers.formatUnits(o.amountToken, meta.decimals));
+    if (!(nat > 0) || !(tok > 0)) return "";
+    return `1 ${escHtml(meta.symbol)} = ${fmtNum(nat / tok)} ${NATIVE_SYMBOL} · 1 ${NATIVE_SYMBOL} = ${fmtNum(tok / nat)} ${escHtml(meta.symbol)}`;
+  }
+  function offerAgeText(o) {
+    const t = Number(o.createdAt);
+    if (!t) return "";
+    const s = Math.max(0, Math.floor(Date.now() / 1000) - t);
+    const ago = s < 3600 ? `${Math.max(1, Math.round(s / 60))} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`;
+    return `<span title="${new Date(t * 1000).toLocaleString()}">posted ${ago}</span>`;
+  }
+  function copyOfferLink(id, btn) {
+    const url = `${location.origin}${location.pathname}#offer=${id}`;
+    copyToClipboard(url, btn);
+  }
+  // Compare filling the offer with swapping the same amount on Reef right now (Reef's fee and price impact included).
+  const REEF = { ROUTER: "0xbd6fbA41Ab84292163A599510a12d6Bf8B7CCc76", WBDAG: "0x62ba5c4F067989a7f6644488C875bEa69Bfa1FBA" };
+  const REEF_ROUTER_ABI = ["function getAmountsOut(uint256,address[]) view returns (uint256[])"];
+  async function reefComparison(o, meta) {
+    const router = (p) => new ethers.Contract(REEF.ROUTER, REEF_ROUTER_ABI, p);
+    const fee = (o.amountNative * BigInt(o.feeBpsAtCreation)) / 10000n;
+    if (o.makerGivesNative) {
+      // Taker sends tokens and receives BDAG (minus the Handshake fee). Reef alternative: sell the same tokens.
+      const out = await withReadFallback((p) => router(p).getAmountsOut(o.amountToken, [o.token, REEF.WBDAG]));
+      const reef = out[out.length - 1], here = o.amountNative - fee;
+      return { reef, here, unit: NATIVE_SYMBOL, decimals: 18, verb: "receive" };
+    }
+    // Taker pays BDAG and receives tokens. Reef alternative: buy with the same BDAG.
+    const out = await withReadFallback((p) => router(p).getAmountsOut(o.amountNative, [REEF.WBDAG, o.token]));
+    return { reef: out[out.length - 1], here: o.amountToken, unit: meta.symbol, decimals: meta.decimals, verb: "receive" };
+  }
+  async function fillReefComparisons(rows) {
+    await Promise.all(rows.filter((r) => r.status === "Open").map(async (r) => {
+      const els = document.querySelectorAll(`[data-reef-id="${r.id}"]`);
+      if (!els.length) return;
+      const meta = tokenMetaCache.get(r.o.token.toLowerCase()) || { symbol: "TOKEN", decimals: 18 };
+      let html = "", cls = "";
+      try {
+        const c = await reefComparison(r.o, meta);
+        if (c.reef > 0n) {
+          const pct = (Number(c.here - c.reef) / Number(c.reef)) * 100;
+          const amt = `${fmtNum(Number(ethers.formatUnits(c.here, c.decimals)))} ${escHtml(c.unit)} here vs ${fmtNum(Number(ethers.formatUnits(c.reef, c.decimals)))} on Reef`;
+          if (Math.abs(pct) < 0.5) html = `About the same as swapping on <a href="https://reefdex.fyi/" target="_blank" rel="noopener">Reef</a> right now (${amt}).`;
+          else { cls = pct > 0 ? "better" : "worse"; html = `For the taker: ${Math.abs(pct).toFixed(1)}% ${pct > 0 ? "more" : "less"} than swapping the same amount on <a href="https://reefdex.fyi/" target="_blank" rel="noopener">Reef</a> right now (${amt}).`; }
+        }
+      } catch (e) { html = ""; } // no Reef pool for this token, or the read failed: show nothing
+      els.forEach((el) => { el.className = "offer-reef" + (cls ? " " + cls : ""); el.innerHTML = html; });
+    }));
+  }
+  // Open a shared offer link: /#offer=12 shows that offer above the list, whatever its status.
+  async function showSharedOffer() {
+    const box = document.getElementById("sharedOffer");
+    const m = /^#offer=(\d{1,9})$/.exec(location.hash || "");
+    if (!m) { box.style.display = "none"; box.innerHTML = ""; return; }
+    const id = Number(m[1]);
+    box.style.display = "";
+    box.innerHTML = `<div class="shared-head"><span>Shared offer #${id}</span></div><div class="gallery-empty" style="padding:12px 0">Loading offer #${id}…</div>`;
+    try {
+      const total = Number(await withReadFallback((p) => getReadContract(p).totalOffers()));
+      if (id < 1 || id > total) throw new Error("missing");
+      const o = await withReadFallback((p) => getReadContract(p).getOffer(id));
+      const status = STATUS_LABEL[Number(o.status)] || "None";
+      if (status === "None") throw new Error("missing");
+      const meta = await getTokenMeta(o.token).catch(() => null);
+      const note = status === "Open" ? "" : `<span>${status === "Filled" ? "This offer has already been filled." : "This offer was cancelled by its maker."}</span>`;
+      box.innerHTML = `<div class="shared-head"><span>Shared offer #${id}</span>${note}<button type="button" class="link-btn" onclick="history.replaceState(null,'',location.pathname+location.search);showSharedOffer()">Close</button></div>` +
+        renderOfferCard(id, o, status, meta).replace('class="offer-card ', 'class="offer-card shared ');
+      attachOfferActions();
+      fillReefComparisons([{ id, o, status }]);
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      box.innerHTML = `<div class="shared-head"><span>Shared offer #${id}</span><button type="button" class="link-btn" onclick="history.replaceState(null,'',location.pathname+location.search);showSharedOffer()">Close</button></div><div class="gallery-empty" style="padding:12px 0">Couldn't find offer #${id}. Check the link, or try again in a moment.</div>`;
+    }
+  }
+  window.addEventListener("hashchange", showSharedOffer);
+  window.copyOfferLink = copyOfferLink;
+  window.showSharedOffer = showSharedOffer;
+
   // Reads no longer depend on a connected wallet — show live data immediately
   // so visitors can browse before deciding to connect.
   refreshStats();
   loadOffers();
+  showSharedOffer();
   loadTradeHistory();
 
   // ---- Live RPC status panel — checks each RPC directly from this browser ----
@@ -1680,6 +1782,7 @@ details to be added here before this is used for real.]
         : '<div class="gallery-empty">Nothing here yet.</div>';
 
       attachOfferActions();
+      fillReefComparisons(rows);
     } catch (err) {
       listEl.innerHTML = `<div class="gallery-empty">Could not load offers: ${friendlyError(err)}</div>`;
     }
@@ -1711,17 +1814,19 @@ details to be added here before this is used for real.]
     }
 
     return `
-      <div class="offer-card ${dirClass}">
+      <div class="offer-card ${dirClass}" data-offer-id="${id}">
         <div class="top-row">
           <span class="offer-id">#${id}</span>
           <span class="offer-badge ${status.toLowerCase()}">${status.toLowerCase()}</span>
         </div>
         <div class="offer-trade">${giveLabel}</div>
+        <div class="offer-rate">${offerRateText(o, meta)}</div>
         <div class="offer-meta">
-          maker ${o.maker.slice(0,6)}…${o.maker.slice(-4)}
+          ${offerAgeText(o)} · maker ${o.maker.slice(0,6)}…${o.maker.slice(-4)}
           ${isRestricted ? ` · <span class="private-tag">restricted to ${o.taker.slice(0,6)}…${o.taker.slice(-4)}</span>` : " · open to anyone"}
         </div>
-        ${actions ? `<div class="offer-actions">${actions}</div>` : ""}
+        ${status === "Open" ? `<div class="offer-reef" data-reef-id="${id}"></div>` : ""}
+        <div class="offer-actions">${actions}<button type="button" class="link-btn" onclick="copyOfferLink(${id}, this)" title="Copy a link straight to this offer">Copy link</button></div>
         <div class="status-msg" id="offerStatus-${id}"></div>
       </div>
     `;
@@ -1729,6 +1834,8 @@ details to be added here before this is used for real.]
 
   function attachOfferActions() {
     document.querySelectorAll("[data-action]").forEach(btn => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
       btn.addEventListener("click", () => handleOfferAction(btn));
     });
   }
