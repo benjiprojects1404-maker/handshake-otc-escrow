@@ -472,6 +472,13 @@
   .offer-reef.better { color: var(--get); }
   .offer-reef.worse { color: var(--danger); }
   .offer-reef a { color: inherit; }
+  .price-check { font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); margin: -4px 0 14px; }
+  .price-check:empty { display: none; }
+  .price-check .pc-rate { font-family: 'JetBrains Mono', monospace; color: var(--ink); }
+  .price-check.warn { color: var(--danger); }
+  .price-check.note { color: var(--dot-warn); }
+  .price-check.ok { color: var(--get); }
+  .price-check b { color: inherit; }
   .link-btn { background: none; border: 1px solid var(--line); color: var(--ink-dim); font-size: 11.5px; padding: 3px 9px; border-radius: 6px; cursor: pointer; font-family: inherit; }
   .link-btn:hover { color: var(--ink); border-color: var(--line-strong); }
   .offer-card.shared { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -729,6 +736,8 @@
         <label>Restrict to a specific address (optional)</label>
         <input type="text" id="takerInput" placeholder="0x... — leave blank to allow anyone">
       </div>
+
+      <div class="price-check" id="priceCheck" aria-live="polite"></div>
 
       <button class="btn btn-primary btn-full" id="createBtn">Create offer</button>
       <div class="status-msg" id="createStatus"></div>
@@ -1386,6 +1395,80 @@ details to be added here before this is used for real.]
     }
   });
 
+
+  // ---- Maker-side price check against Reef, to catch typos and mispriced offers before they go live ----
+  let currentFeeBps = null;
+  async function getFeeBps() {
+    if (currentFeeBps === null) currentFeeBps = Number(await withReadFallback((p) => getReadContract(p).feeBps()));
+    return currentFeeBps;
+  }
+  // Returns { pct, here, reef, unit, decimals } from the maker's side, or null if Reef has no route.
+  // pct < 0: the maker gets less than Reef would give them. pct > 0: the maker asks for more than Reef gives (takers will prefer Reef).
+  async function makerVsReef(makerGivesNative, token, amountNative, amountToken, feeBps, meta) {
+    const router = (p) => new ethers.Contract(REEF.ROUTER, REEF_ROUTER_ABI, p);
+    if (makerGivesNative) {
+      const out = await withReadFallback((p) => router(p).getAmountsOut(amountNative, [REEF.WBDAG, token]));
+      const reef = out[out.length - 1];
+      if (reef <= 0n) return null;
+      return { pct: (Number(amountToken - reef) / Number(reef)) * 100, here: amountToken, reef, unit: meta.symbol, decimals: meta.decimals };
+    }
+    const out = await withReadFallback((p) => router(p).getAmountsOut(amountToken, [token, REEF.WBDAG]));
+    const reef = out[out.length - 1];
+    if (reef <= 0n) return null;
+    const here = amountNative - (amountNative * BigInt(feeBps)) / 10000n;
+    return { pct: (Number(here - reef) / Number(reef)) * 100, here, reef, unit: NATIVE_SYMBOL, decimals: 18 };
+  }
+  // Plain-English verdict for the maker. level: ok | note (unlikely to fill) | warn (giving value away / likely typo).
+  function makerVerdict(c) {
+    const amt = `${fmtNum(Number(ethers.formatUnits(c.here, c.decimals)))} ${escHtml(c.unit)} here vs ${fmtNum(Number(ethers.formatUnits(c.reef, c.decimals)))} on Reef`;
+    const ratio = c.pct >= 0 ? 1 + c.pct / 100 : 1 / (1 + c.pct / 100);
+    const big = ratio >= 10 ? " That's a big gap, so check you haven't added a zero or swapped the two amounts." : "";
+    if (Math.abs(c.pct) < 5) return { level: "ok", html: `In line with Reef right now (${amt}).` };
+    if (c.pct < 0) {
+      const how = ratio >= 2 ? `${ratio.toFixed(ratio >= 10 ? 0 : 1)}× less` : `${Math.abs(c.pct).toFixed(1)}% less`;
+      return { level: Math.abs(c.pct) >= 20 ? "warn" : "note", html: `<b>You'd receive ${how} than swapping on Reef right now</b> (${amt}).${big}` };
+    }
+    const how = ratio >= 2 ? `${ratio.toFixed(ratio >= 10 ? 0 : 1)}× more` : `${c.pct.toFixed(1)}% more`;
+    return { level: c.pct >= 20 ? (ratio >= 10 ? "warn" : "note") : "ok", html: `<b>You're asking ${how} than Reef gives right now</b> (${amt}), so takers may prefer Reef and this may not fill.${big}` };
+  }
+  // Live check under the New offer form.
+  let priceCheckSeq = 0, priceCheckTimer = null, createArmed = false, lastVerdict = null;
+  function disarmCreate() {
+    createArmed = false;
+    const b = document.getElementById("createBtn");
+    if (b) b.textContent = "Create offer";
+  }
+  async function runPriceCheck() {
+    const el = document.getElementById("priceCheck");
+    const seq = ++priceCheckSeq;
+    lastVerdict = null;
+    disarmCreate();
+    const tokenAddr = document.getElementById("tokenAddrInput").value.trim();
+    const nStr = document.getElementById("amountNativeInput").value.trim();
+    const tStr = document.getElementById("amountTokenInput").value.trim();
+    if (!ethers.isAddress(tokenAddr) || !(Number(nStr) > 0) || !(Number(tStr) > 0)) { el.className = "price-check"; el.innerHTML = ""; return; }
+    try {
+      const meta = await getTokenMeta(tokenAddr);
+      const nat = ethers.parseEther(nStr), tok = ethers.parseUnits(tStr, meta.decimals);
+      const rate = `<span class="pc-rate">1 ${escHtml(meta.symbol)} = ${fmtNum(Number(nStr) / Number(tStr))} ${NATIVE_SYMBOL} · 1 ${NATIVE_SYMBOL} = ${fmtNum(Number(tStr) / Number(nStr))} ${escHtml(meta.symbol)}</span>`;
+      el.className = "price-check"; el.innerHTML = `Your price: ${rate}<br>Checking against Reef…`;
+      let c = null;
+      try { c = await makerVsReef(direction === "giveNative", tokenAddr, nat, tok, await getFeeBps(), meta); } catch (e) { c = null; }
+      if (seq !== priceCheckSeq) return;
+      if (!c) { el.className = "price-check"; el.innerHTML = `Your price: ${rate}<br>No Reef pool to compare with for this token, so double-check the amounts yourself.`; return; }
+      const v = makerVerdict(c);
+      lastVerdict = v;
+      el.className = "price-check " + v.level;
+      el.innerHTML = `Your price: ${rate}<br>${v.html}`;
+    } catch (e) {
+      if (seq !== priceCheckSeq) return;
+      el.className = "price-check"; el.innerHTML = "";
+    }
+  }
+  function schedulePriceCheck() { clearTimeout(priceCheckTimer); disarmCreate(); priceCheckTimer = setTimeout(runPriceCheck, 450); }
+  ["tokenAddrInput", "amountNativeInput", "amountTokenInput"].forEach((id) => document.getElementById(id).addEventListener("input", schedulePriceCheck));
+  [dirGiveNativeBtn, dirGiveTokenBtn].forEach((b) => b.addEventListener("click", schedulePriceCheck));
+
   // ---- Create offer ----
   document.getElementById("createBtn").addEventListener("click", async () => {
     const statusEl = document.getElementById("createStatus");
@@ -1401,6 +1484,13 @@ details to be added here before this is used for real.]
     if (!ethers.isAddress(tokenAddr)) { statusEl.textContent = "Enter a valid token address."; statusEl.className = "status-msg error"; return; }
     if (!amountNativeStr || !amountTokenStr) { statusEl.textContent = "Enter both amounts."; statusEl.className = "status-msg error"; return; }
     if (takerInput && !ethers.isAddress(takerInput)) { statusEl.textContent = "Restricted address isn't valid."; statusEl.className = "status-msg error"; return; }
+    if (lastVerdict && lastVerdict.level === "warn" && !createArmed) {
+      createArmed = true;
+      document.getElementById("createBtn").textContent = "Create anyway";
+      statusEl.textContent = "This price is far from Reef's (see the note above). Check the amounts, then press \"Create anyway\" if it's what you meant.";
+      statusEl.className = "status-msg error";
+      return;
+    }
 
     const btn = document.getElementById("createBtn");
     try {
@@ -1476,6 +1566,8 @@ details to be added here before this is used for real.]
 
       statusEl.textContent = "Offer created.";
       statusEl.className = "status-msg success";
+      disarmCreate();
+      document.getElementById("priceCheck").innerHTML = "";
       document.getElementById("amountNativeInput").value = "";
       document.getElementById("amountTokenInput").value = "";
       document.getElementById("takerInput").value = "";
@@ -1550,6 +1642,14 @@ details to be added here before this is used for real.]
       if (!els.length) return;
       const meta = tokenMetaCache.get(r.o.token.toLowerCase()) || { symbol: "TOKEN", decimals: 18 };
       let html = "", cls = "";
+      if (userAddress && r.o.maker.toLowerCase() === userAddress.toLowerCase()) {
+        try {
+          const c = await makerVsReef(r.o.makerGivesNative, r.o.token, r.o.amountNative, r.o.amountToken, Number(r.o.feeBpsAtCreation), meta);
+          if (c) { const v = makerVerdict(c); html = "Your offer: " + v.html; cls = v.level === "ok" ? "better" : "worse"; }
+        } catch (e) { html = ""; }
+        els.forEach((el) => { el.className = "offer-reef" + (cls ? " " + cls : ""); el.innerHTML = html; });
+        return;
+      }
       try {
         const c = await reefComparison(r.o, meta);
         if (c.reef > 0n) {
