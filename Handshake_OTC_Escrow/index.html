@@ -1494,6 +1494,8 @@ details to be added here before this is used for real.]
 
   // ---- Quick-pick tokens (those with a BDAG pool on Reef) and the balance you'd be offering ----
   const REEF_FACTORY = "0x9603042044b6B1A1637c508F731ba01219142239";
+  // Reef pools that Reef's own site hides (pair 1 is the CTEST test pool), so they aren't offered here either.
+  const REEF_HIDDEN_PAIR_INDEXES = new Set([1]);
   async function loadQuickPick() {
     const box = document.getElementById("quickPick");
     try {
@@ -1502,7 +1504,8 @@ details to be added here before this is used for real.]
         const n = Math.min(Number(await f.allPairsLength()), 100);
         const pairs = await Promise.all(Array.from({ length: n }, (_, i) => f.allPairs(i)));
         const w = REEF.WBDAG.toLowerCase(), out = new Set();
-        await Promise.all(pairs.map(async (pa) => {
+        await Promise.all(pairs.map(async (pa, idx) => {
+          if (REEF_HIDDEN_PAIR_INDEXES.has(idx)) return;
           const c = new ethers.Contract(pa, ["function token0() view returns (address)", "function token1() view returns (address)", "function getReserves() view returns (uint112,uint112,uint32)"], p);
           const [t0, t1, r] = await Promise.all([c.token0(), c.token1(), c.getReserves()]);
           if (r[0] === 0n || r[1] === 0n) return; // empty pool
