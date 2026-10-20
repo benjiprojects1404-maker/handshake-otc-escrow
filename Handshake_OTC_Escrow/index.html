@@ -914,11 +914,12 @@
   // 1404, near the head and with matching block hashes are used, and the flagged fork is never
   // used. So nodes that shut down drop off and new ones appear without a site update.
   // FALLBACK_RPC_URLS is used until that list loads, if it can't be loaded, and for the wallet's
-  // "add network" prompt. Last reviewed 1 Oct 2026. An RPC can misreport balances/gas/tx status to
+  // "add network" prompt. Last reviewed 20 Oct 2026 (community gateway first, nodes as fallbacks). An RPC can misreport balances/gas/tx status to
   // the wallet's confirmation dialogs before a user signs, so this list is a trust decision; the RPC
   // status panel below also cross-checks the nodes live from the visitor's browser.
   const RPC_LIST_URL = "https://www.nodaldex.fyi/api/rpcs";
   const FALLBACK_RPC_URLS = [
+    "https://rpc.community.bdag-us.org",
     "https://rpc.capedag.com",
     "https://rms-bdag-rpc.de/api/rpc-live",
     "https://rpc.dvdmining.com",
