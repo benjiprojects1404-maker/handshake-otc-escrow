@@ -22,16 +22,17 @@
     --line: rgba(150,210,225,0.12);
     --line-strong: rgba(150,210,225,0.22);
     --ink: #e7f3f5;
-    --accent: #b794f6;
-    --accent-dim: rgba(183,148,246,0.16);
+    --accent: #d6dde3;
+    --accent-dim: rgba(214,221,227,0.16);
+    --on-accent: #0b1416;
     --ink-dim: rgba(231,243,245,0.68);
     --ink-faint: rgba(231,243,245,0.44);
     --give: #ff8b6a;
     --give-dim: rgba(255,139,106,0.14);
     --get: #37d3f4;
     --get-dim: rgba(55,211,244,0.14);
-    --private: #a855f7;
-    --private-dim: rgba(168,85,247,0.14);
+    --private: #d6dde3;
+    --private-dim: rgba(214,221,227,0.14);
     --danger: #ff6b6b;
     --danger-dim: rgba(255,107,107,0.12);
     --dot-ok: #3fbf83;
@@ -47,16 +48,17 @@
       --line: rgba(6,40,46,0.14);
       --line-strong: rgba(6,40,46,0.22);
       --ink: #0b1f24;
-      --accent: #6d3ad0;
-      --accent-dim: rgba(109,58,208,0.12);
+      --accent: #44525b;
+      --accent-dim: rgba(68,82,91,0.12);
+      --on-accent: #ffffff;
       --ink-dim: rgba(11,31,36,0.72);
       --ink-faint: rgba(11,31,36,0.52);
       --give: #c94a28;
       --give-dim: rgba(201,74,40,0.12);
       --get: #087f9e;
       --get-dim: rgba(8,127,158,0.12);
-      --private: #7a35e0;
-      --private-dim: rgba(122,53,224,0.12);
+      --private: #44525b;
+      --private-dim: rgba(68,82,91,0.12);
       --danger: #c92f2f;
       --danger-dim: rgba(201,47,47,0.10);
       --dot-ok: #1a9b5f;
@@ -73,13 +75,13 @@
     overflow-x: hidden;
     background:
       radial-gradient(ellipse 900px 500px at 80% -5%, rgba(10,113,161,0.16) 0%, transparent 60%),
-      radial-gradient(ellipse 700px 400px at 10% 10%, rgba(183,148,246,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 700px 400px at 10% 10%, rgba(214,221,227,0.06) 0%, transparent 55%),
       var(--bg);
     color: var(--ink);
     font-family: 'Instrument Sans', sans-serif;
   }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 100px; }
-  ::selection { background: var(--accent); color: #0b0716; }
+  ::selection { background: var(--accent); color: var(--on-accent); }
 
 
   /* ---- Security & FAQ dropdowns (same pattern as Nodal) ---- */
@@ -142,7 +144,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    filter: drop-shadow(0 0 14px rgba(168,85,247,0.35));
+    filter: drop-shadow(0 0 14px rgba(214,221,227,0.35));
     animation: nameShimmer 7s ease-in-out infinite;
   }
   @keyframes nameShimmer {
@@ -155,8 +157,8 @@
     font-weight: 600;
     letter-spacing: 1.4px;
     color: var(--private);
-    border: 1px solid rgba(168,85,247,0.35);
-    background: rgba(168,85,247,0.08);
+    border: 1px solid rgba(214,221,227,0.35);
+    background: rgba(214,221,227,0.08);
     border-radius: 20px;
     padding: 3px 8px;
   }
@@ -304,7 +306,7 @@
   }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-primary { background: var(--accent); color: #0b0716; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
   .btn-primary:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--accent-dim); }
   .btn-outline { background: transparent; border: 1px solid var(--line-strong); color: var(--ink); }
   .btn-outline:hover:not(:disabled) { border-color: var(--ink-dim); }
@@ -484,7 +486,7 @@
   .bal-hint button { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0 0 0 6px; text-decoration: underline; }
   .list-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
   .list-controls select { background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink-dim); font: 600 12px 'Instrument Sans', sans-serif; padding: 6px 8px; border-radius: 7px; }
-  .new-badge { font-size: 10px; font-weight: 700; letter-spacing: .4px; padding: 3px 8px; border-radius: 20px; background: var(--accent-dim, rgba(168,85,247,.15)); color: var(--accent); margin-left: 6px; }
+  .new-badge { font-size: 10px; font-weight: 700; letter-spacing: .4px; padding: 3px 8px; border-radius: 20px; background: var(--accent-dim, rgba(214,221,227,.15)); color: var(--accent); margin-left: 6px; }
   .price-check .pc-rate { font-family: 'JetBrains Mono', monospace; color: var(--ink); }
   .price-check.warn { color: var(--danger); }
   .price-check.note { color: var(--dot-warn); }
