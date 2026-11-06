@@ -54,3 +54,33 @@ Please report security issues privately to **security@handshakeotc.fyi**, not in
 ## Disclaimer
 
 Experimental software. Not audited. Not financial advice.
+
+## Fuzz and invariant tests (Foundry)
+
+Stateful fuzzing for the deployed escrow, `Handshake_OTC_Escrow/contracts/OTCEscrow_v3.sol`, in `test/foundry/`.
+Same setup as Chord OTC's `foundry-tests` branch.
+
+```bash
+git submodule update --init      # forge-std v1.17.0
+forge test                       # 256 runs x 100 calls per invariant, 1,000 runs per fuzz test
+FOUNDRY_PROFILE=ci forge test    # 1,000 runs x 200 calls per invariant
+```
+
+A handler drives random sequences of creates, fills and cancels from four wallets plus a wallet contract that can refuse
+BDAG, across three tokens (plain, one that returns nothing on transfer, one that can switch on a transfer tax), while it
+also changes the fee, pauses, sets per-offer caps and blocks transfers. Checked after every sequence:
+
+| | Invariant |
+|---|---|
+| I1 | The escrow's BDAG balance equals the BDAG locked by open offers |
+| I2 | The escrow's balance of each token equals the tokens locked by open offers |
+| I3 | Every offer's status matches the handler's record, and a filled or cancelled offer can never be filled or cancelled again |
+| I4 | The fee recipient receives exactly `amountNative * feeBpsAtCreation / 10,000` per fill, never the live fee |
+| I5 | Each offer keeps the fee that applied when it was created |
+| I6 | Offer ids never skip or repeat |
+
+Plus single-property fuzz tests: exact split on fill, fee changes don't touch open offers, exact refunds and maker-only
+cancel, the per-offer cap, taxed tokens refused at creation, and private offers fillable only by their named taker.
+
+Each test was checked by breaking the contract on purpose (filling with the live fee instead of the snapshot; a cancel
+that leaves the offer open) and confirming the tests then fail.

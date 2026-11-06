@@ -1,0 +1,26 @@
+# Foundry fuzz and invariant tests for the Handshake OTC escrow (same setup as Chord OTC's foundry-tests).
+# Run: forge test        (CI depth: FOUNDRY_PROFILE=ci forge test)
+[profile.default]
+src = "Handshake_OTC_Escrow/contracts"
+test = "test/foundry"
+out = "out"
+cache_path = "cache"
+libs = ["lib"]
+solc_version = "0.8.24"
+evm_version = "berlin"
+optimizer = true
+optimizer_runs = 200
+fs_permissions = [{ access = "read", path = "./" }]
+
+[fuzz]
+runs = 1000
+
+[invariant]
+runs = 256
+depth = 100
+fail_on_revert = false
+show_metrics = true
+
+[profile.ci.invariant]
+runs = 1000
+depth = 200
