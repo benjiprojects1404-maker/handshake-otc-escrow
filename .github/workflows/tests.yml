@@ -1,0 +1,26 @@
+name: Contract tests
+
+# Runs the Foundry fuzz and invariant tests on every pull request and on main.
+# A red cross on the PR means a test failed: don't merge until it's green.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  foundry:
+    name: Foundry tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive # forge-std
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - run: forge test # fork tests skip themselves without --fork-url
