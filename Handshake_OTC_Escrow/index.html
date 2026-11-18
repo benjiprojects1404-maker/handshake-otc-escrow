@@ -7,13 +7,13 @@
   // so the real domain and preview deployments are unaffected.
   if (location.hostname === "otcescrow.pages.dev") location.replace("https://handshakeotc.fyi" + location.pathname + location.search + location.hash);
 </script>
-<title>Handshake — OTC Escrow on Chain 1404</title>
-<meta name="description" content="Handshake is a peer-to-peer OTC escrow on BlockDAG (chain 1404). Lock BDAG or a token, name your price, and let anyone, or one address, fill it. Both sides settle in one transaction.">
+<title>Handshake — peer-to-peer OTC on Chain 1404</title>
+<meta name="description" content="Handshake is peer-to-peer OTC on BlockDAG (chain 1404). Name your price for BDAG or a token, and let anyone, or one address, fill it. Your funds stay in your wallet until the trade settles, both sides in one transaction.">
 <link rel="canonical" href="https://handshakeotc.fyi/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://handshakeotc.fyi/">
-<meta property="og:title" content="Handshake: OTC escrow on chain 1404">
-<meta property="og:description" content="Lock BDAG or a token in escrow, name your price, and let anyone or one address fill it. Funds move atomically or not at all.">
+<meta property="og:title" content="Handshake: peer-to-peer OTC on chain 1404">
+<meta property="og:description" content="Name your price for BDAG or a token and let anyone, or one address, fill it. Your funds stay in your wallet until the trade settles in one transaction.">
 <meta property="og:image" content="https://handshakeotc.fyi/og-image.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -464,6 +464,7 @@
   .offer-badge.open { background: var(--get-dim); color: var(--get); border: 1px solid rgba(186,255,92,0.3); }
   .offer-badge.filled { background: rgba(255,255,255,0.07); color: var(--ink-dim); border: 1px solid var(--line); }
   .offer-badge.cancelled { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,92,92,0.3); }
+  .offer-badge.expired { background: rgba(255,255,255,0.05); color: var(--ink-faint); border: 1px solid var(--line); }
   .offer-trade { font-family: 'JetBrains Mono', monospace; font-size: 14.5px; font-weight: 600; margin-bottom: 7px; }
   .offer-trade .give-amt { color: var(--give); }
   .offer-trade .get-amt { color: var(--get); }
@@ -614,7 +615,7 @@
     <div class="brand">
       <div class="mark">⇄</div>
       <div>
-        <div class="name"><span class="name-text">Handshake</span><span class="name-sub">OTC ESCROW</span></div>
+        <div class="name"><span class="name-text">Handshake</span><span class="name-sub">PEER-TO-PEER OTC</span></div>
         <div class="chain-badge"><span class="pulse-dot"></span>ON CHAIN 1404</div>
       </div>
     </div>
@@ -635,18 +636,18 @@
 
   <div class="beta-banner" id="pausedBanner" style="display:none;">
     <span class="beta-banner-tag">PAUSED</span>
-    New offers are paused by the contract owner. Existing offers can still be filled or cancelled.
+    Handshake is paused by the contract owner: new offers and fills are on hold. Your funds are in your own wallet, and you can still cancel your offers.
   </div>
 
   <div class="hero">
     <div>
-      <div class="hero-eyebrow">PEER-TO-PEER · ESCROW HELD BY CODE</div>
+      <div class="hero-eyebrow">PEER-TO-PEER · YOUR FUNDS STAY IN YOUR WALLET</div>
       <h1>Trade hand to hand,<br><em>not order to order.</em></h1>
-      <p>Lock BDAG or a token in escrow, name your price, and let anyone — or one specific address — fill it. Funds move atomically or not at all. Cancel anytime before it's taken.</p>
+      <p>Name your price for BDAG or a token and let anyone — or one specific address — fill it. Nothing is deposited: your side stays in your wallet until someone fills, then both sides move in one transaction or not at all. Cancel anytime.</p>
       <div class="hero-tickertape">
         <div class="track">
-          <span class="on">LOCK</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
-          <span class="on">LOCK</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
+          <span class="on">APPROVE</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
+          <span class="on">APPROVE</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
         </div>
       </div>
     </div>
@@ -655,11 +656,12 @@
   <div class="panel" style="margin-bottom:20px;">
     <h3 style="margin-bottom:12px;">What Handshake does</h3>
     <p style="color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0 0 18px; max-width: none;">
-      Handshake is a peer-to-peer escrow contract on chain 1404. While an offer is open, the maker's asset is held by the contract itself (not by us or any other person) and goes straight back to them if they cancel. Anyone can lock up
-      <span style="color:var(--give)">BDAG</span> or any <span style="color:var(--get)">ERC-20 token</span> and post it as
-      an open offer; a counterparty fills it and both assets change hands in one atomic transaction — either the full
-      trade settles, or nothing moves at all. There's no pooled liquidity, no order book matching engine, and no
-      intermediary ever holding funds — the contract itself is the only escrow.
+      Handshake is a peer-to-peer OTC contract on chain 1404 that never holds your funds. When you post an offer,
+      the contract records only its terms; your <span style="color:var(--give)">BDAG</span> or
+      <span style="color:var(--get)">ERC-20 token</span> stays in your own wallet, covered by an ordinary approval.
+      When a counterparty fills, both assets move wallet to wallet in one atomic transaction — either the full trade
+      settles, or nothing moves at all. There's no pooled liquidity, no order book matching engine, and nobody,
+      including the contract and us, ever holds your funds in between.
     </p>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
       <div>
@@ -672,7 +674,7 @@
       </div>
       <div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">CANCEL ANYTIME</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Makers can pull an open offer back before it's filled — no lockup beyond that.</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Makers can cancel an open offer at any time. Nothing was deposited, so there's nothing to wait for.</div>
       </div>
       <div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">LIVE MARKET DATA</div>
@@ -797,25 +799,25 @@
     <details class="qa">
       <summary>What nobody can do, including us</summary>
       <div class="qa-a">
-        The contract has no function that withdraws, rescues or redirects an open offer's assets. Once you lock BDAG or a token in an offer, only two things can happen to it: it goes to the taker when they fill your offer, or it comes back to you when you cancel. Nobody else, including the contract owner, can move it.
+        The contract never holds your funds, and has no function that could move them other than a fill you or your counterparty agreed to. While an offer is open your asset stays in your wallet; the contract can only use your approval to move exactly the agreed amount to the taker, in the same transaction that pays you. Nobody, including the contract owner, can move it any other way. You can cancel the offer, or remove the approval in your wallet, at any time.
       </div>
     </details>
     <details class="qa">
       <summary>What the contract owner can change</summary>
       <div class="qa-a">
-        Only these settings: the fee (hard-capped in the contract at 3%), where fees are paid, per-offer beta limits, and pausing <em>new</em> offers. Each offer records the fee at the moment it's created, so a later fee change never affects an open offer. Pausing can't trap anyone: filling and cancelling existing offers always keep working.
+        Only these settings: the fee (hard-capped in the contract at 3%), where fees are paid, per-offer beta limits, and pausing. Each offer records the fee at the moment it's created, so a later fee change never affects an open offer. Pausing stops new offers and fills, but it can't trap anyone: your funds are in your own wallet the whole time, and cancelling always works.
       </div>
     </details>
     <details class="qa">
       <summary>Who the owner is</summary>
       <div class="qa-a">
-        A 2-of-3 multisig wallet (<a href="https://explorer.bdagexplorer.com/address/0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0x4E24…60fc</a>) controlled by two separate hardware wallets. Every owner action needs both to sign, so no single key can change anything.
+        A 2-of-3 multisig wallet (<a href="https://explorer.bdagexplorer.com/address/0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0x4E24…60fc</a>) controlled by separate hardware wallets. Every owner action needs two of them to sign, so no single key can change anything.
       </div>
     </details>
     <details class="qa">
       <summary>Check it yourself</summary>
       <div class="qa-a">
-        The contract (<a href="https://explorer.bdagexplorer.com/address/0xD907701A2D96f7D0E7596b02737C9F36446cf5CA" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">0xD907…f5CA</a>) is verified on explorer.bdagexplorer.com, so the published source is proven to match the deployed code. Read the <a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow/blob/main/Handshake_OTC_Escrow/contracts/OTCEscrow_v3.sol" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">source on GitHub</a>. It's also self-contained, with no external libraries or upgrade mechanism, so the code can't be swapped out later.
+        The contract (<a data-contract-link href="#" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">see the explorer</a>) is published with its full source, so you can check the deployed code matches it. Read the <a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow/blob/main/Handshake_OTC_Escrow/contracts/HandshakeV4.sol" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">source</a> and its <a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow/blob/main/Handshake_OTC_Escrow/contracts/HandshakeV4.REVIEW.md" target="_blank" rel="noopener noreferrer" style="color:var(--get); text-decoration:underline;">review notes and tests</a>.
       </div>
     </details>
     <details class="qa">
@@ -837,17 +839,15 @@
     <details class="qa">
       <summary>Does this only work if both sides use the same currency?</summary>
       <div class="qa-a">
-        No — escrow doesn't require a matching currency on both sides. Every offer here already pairs two different
-        assets: <span style="color:var(--give)">BDAG</span> on one side and any
-        <span style="color:var(--get)">ERC-20 token</span> on the other. Just like modern cross-border escrow isn't
-        limited to a single currency, this contract locks one asset and releases it only when the counter-asset is
-        delivered — atomically, in the same transaction — so mismatched pairs settle just as safely as identical ones.
+        No. Every offer pairs two different assets: <span style="color:var(--give)">BDAG</span> on one side and any
+        <span style="color:var(--get)">ERC-20 token</span> on the other. Both move in the same transaction, so
+        mismatched pairs settle just as safely as identical ones.
       </div>
     </details>
     <details class="qa">
       <summary>Is "any ERC-20" actually safe to trust?</summary>
       <div class="qa-a">
-        Handshake doesn't vet, allowlist, or restrict which ERC-20 contracts it accepts — it locks and releases
+        Handshake doesn't vet, allowlist, or restrict which ERC-20 contracts it accepts — it moves
         whatever token address you or a counterparty enters. That flexibility cuts both ways: a non-standard or
         deliberately malicious token contract could report a successful transfer without behaving the way a normal
         token would. The live check under the token address field confirms a contract exists and returns a
@@ -858,11 +858,11 @@
     <details class="qa">
       <summary>Which tokens can cause problems?</summary>
       <div class="qa-a">
-        Two kinds. <b>Tokens with a transfer tax</b> (they keep a percentage every time they move): you can't lock
-        one in an offer, but if you ask for one in return for your BDAG, you'll receive less than the amount you
-        asked for, by the size of the tax. <b>Tokens with a blocklist or pause switch</b>: if the token's owner
-        blocks the escrow contract or pauses the token, offers in that token can't be filled or cancelled until it's
-        unblocked. Handshake can't override a token's own rules. Check how a token behaves before you trade it.
+        Two kinds. <b>Tokens with a transfer tax</b> (they keep a percentage every time they move): Handshake
+        checks that the receiver gets exactly the agreed amount, so a fill with one of these simply fails and nothing
+        moves. <b>Tokens with a blocklist or pause switch</b>: if the token's owner blocks either wallet or pauses the
+        token, offers in that token can't be filled until it's unblocked. Your funds are never stuck, because they
+        never leave your wallet, and cancelling always works. Check how a token behaves before you trade it.
       </div>
     </details>
     <details class="qa">
@@ -871,15 +871,32 @@
         Nothing is sent to us: there are no accounts, no sign-ups and no server of ours behind this page. Your browser talks directly to public BlockDAG RPC endpoints (listed under RPC status below) to read the chain and send transactions you sign, loads its code library from cdnjs and fonts from Google Fonts. Those services see a normal web request from your browser, as with any website. The only thing stored on your device is a note that you accepted the terms, kept in your browser's local storage.
       </div>
     </details>
+    <details class="qa">
+      <summary>Why do I need WBDAG to sell BDAG?</summary>
+      <div class="qa-a">
+        Tokens can be approved for a later trade, but plain BDAG can't. So when you offer BDAG, Handshake asks you to
+        hold it as <b>WBDAG</b>: Reef's wrapped BDAG, always exactly 1 BDAG each, which you can unwrap back at any time.
+        The form wraps it for you in one click if needed. The person who fills your offer still receives normal BDAG:
+        the contract unwraps it during the trade.
+      </div>
+    </details>
+    <details class="qa">
+      <summary>Where are my offers from before?</summary>
+      <div class="qa-a">
+        Offers made on the original Handshake escrow (v3), where funds were deposited, are on the
+        <a href="/v3/">older offers page</a>. You can still fill them, or cancel yours there to get your deposit back.
+      </div>
+    </details>
     <details class="qa" id="faq-audit">
       <summary>Has this contract been audited?</summary>
       <div class="qa-a">
-        Not by an independent auditor yet. On 2 October 2026 the escrow had an AI-assisted security review: read
-        line by line, tested with attacks, and matched to its published source on chain. It found no critical, high
-        or medium issues in the escrow; the low-severity ones that can affect you are explained in the FAQ above.
-        <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer">Read the review</a>. That review isn't an audit and
-        can't rule out bugs. Handshake is experimental, beta software running on an early-stage chain. Treat every offer as something you could lose, and start with
-        amounts you're fully comfortable putting at risk.
+        Not by an independent auditor yet. This version (v4) was rebuilt so it never holds funds, and it ships with
+        its own tests, including one that runs thousands of random trades and checks the contract is never left
+        holding anything (<a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow/blob/main/Handshake_OTC_Escrow/contracts/HandshakeV4.REVIEW.md" target="_blank" rel="noopener noreferrer">review notes</a>).
+        The <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer">AI-assisted security review</a>
+        from 2 October 2026 covered the earlier escrow version. Neither is an audit, and neither can rule out bugs.
+        Handshake is experimental, beta software running on an early-stage chain. Start with amounts you're fully
+        comfortable putting at risk.
       </div>
     </details>
   </div>
@@ -908,7 +925,7 @@
   </dialog>
 
   <footer>
-    handshake · otc escrow · held by code, not by us · beta software, not independently audited · <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">security review</a> · <a href="https://explorer.bdagexplorer.com/address/0xD907701A2D96f7D0E7596b02737C9F36446cf5CA" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">verify contract source</a> before trading · <a href="#security" style="color:inherit; text-decoration:underline;">security</a> · <a href="/overview.pdf" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">overview brief (PDF)</a> · built by <a href="https://benjiprojects1404-services.pages.dev" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Undercurrent Works</a> · not financial advice · <a href="/embed/" style="color:inherit; text-decoration:underline;">embed widget for your site</a>
+    handshake · peer-to-peer otc · your funds stay in your wallet · beta software, not independently audited · <a data-contract-link href="#" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">verify contract source</a> before trading · <a href="#security" style="color:inherit; text-decoration:underline;">security</a> · <a href="/v3/" style="color:inherit; text-decoration:underline;">older offers (v3)</a> · <a href="/overview.pdf" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">overview brief (PDF)</a> · built by <a href="https://benjiprojects1404-services.pages.dev" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Undercurrent Works</a> · not financial advice · <a href="/embed/" style="color:inherit; text-decoration:underline;">embed widget for your site</a>
   </footer>
 </div>
 
@@ -917,7 +934,10 @@
   // ---------------------------------------------------------------------
   // CONFIG — fill these in after you deploy the contract
   // ---------------------------------------------------------------------
-  const CONTRACT_ADDRESS = "0xD907701A2D96f7D0E7596b02737C9F36446cf5CA"; // OTCEscrow v3 with pause + per-asset caps (source: contracts/OTCEscrow_v3.sol). The original 0x3A87…4b8a is paused.
+  // Handshake v4 (contracts/HandshakeV4.sol): offers never hold funds. FILL IN ON DEPLOY DAY.
+  // Offers made on the v3 escrow (0xD907…f5CA) live on /v3/.
+  const CONTRACT_ADDRESS = "";
+  const WBDAG_ADDRESS = "0x62ba5c4F067989a7f6644488C875bEa69Bfa1FBA"; // Reef's wrapped BDAG (1:1)
   const CHAIN_ID_DEC = 1404;
   const CHAIN_ID_HEX = "0x57c"; // 1404 in hex
   const NETWORK_NAME = "BlockDAG (Chain 1404)";
@@ -974,23 +994,30 @@
   const NATIVE_SYMBOL = "BDAG";
 
   const CONTRACT_ABI = [
-    "function createOfferGivingNative(address token, uint256 amountToken, address taker) payable returns (uint256)",
-    "function createOfferGivingToken(address token, uint256 amountToken, uint256 amountNative, address taker) returns (uint256)",
-    "function fillOfferGivingToken(uint256 id)",
-    "function fillOfferGivingNative(uint256 id) payable",
+    "function createOffer(address token, uint256 amountToken, uint256 amountNative, bool makerGivesNative, address taker, uint64 expiresAt) returns (uint256)",
+    "function fill(uint256 id) payable",
     "function cancelOffer(uint256 id)",
     "function totalOffers() view returns (uint256)",
     "function feeBps() view returns (uint16)",
     "function paused() view returns (bool)",
     "function maxOfferAmount(address token) view returns (uint256)",
-    "function getOffer(uint256 id) view returns (address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint16 feeBpsAtCreation)",
-    "event OfferCreated(uint256 indexed id, address indexed maker, address indexed taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative)",
+    "function offerReady(uint256 id) view returns (bool)",
+    "function getOffer(uint256 id) view returns (tuple(address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint64 expiresAt, uint16 feeBpsAtCreation))",
+    "event OfferCreated(uint256 indexed id, address indexed maker, address indexed taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint64 expiresAt)",
     "event OfferFilled(uint256 indexed id, address indexed taker, uint256 feePaid)",
     "event OfferCancelled(uint256 indexed id)"
   ];
-  // Event signatures above now match OTCEscrow_v3.sol's actual source exactly (previously
-  // this ABI was a hand-written best guess, since the real source wasn't available at the
-  // time — see git history). Verified against the real contract, not re-guessed.
+  // Matches HandshakeV4.sol. getOffer returns one struct, which ethers hands back with named fields (o.maker, ...).
+  const WBDAG_ABI = [
+    "function deposit() payable",
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function balanceOf(address owner) view returns (uint256)"
+  ];
+  // Explorer links to the live contract.
+  document.querySelectorAll("[data-contract-link]").forEach((a) => {
+    if (CONTRACT_ADDRESS) a.href = "https://explorer.bdagexplorer.com/address/" + CONTRACT_ADDRESS;
+  });
 
   const ERC20_ABI = [
     "function approve(address spender, uint256 amount) returns (bool)",
@@ -1118,7 +1145,14 @@
     if (raw.includes("not open")) return "This offer is no longer open.";
     if (raw.includes("not your offer")) return "You are not the counterparty for this offer.";
     if (raw.includes("wrong BDAG amount")) return "Sent BDAG amount doesn't match the offer.";
-    if (raw.includes("offers paused")) return "New offers are paused right now. Existing offers can still be filled or cancelled.";
+    if (raw.includes("paused")) return "Handshake is paused right now: no new offers or fills. You can still cancel your offers.";
+    if (raw.includes("approve first")) return "The approval didn't go through. Approve, then try again.";
+    if (raw.includes("maker balance too low")) return "Your wallet doesn't hold enough for this offer.";
+    if (raw.includes("expired")) return "This offer has expired.";
+    if (raw.includes("can't fill your own offer")) return "That's your own offer. You can cancel it instead.";
+    if (raw.includes("can't trade with yourself")) return "The restricted address can't be your own wallet.";
+    if (raw.includes("transfer fee or rebased")) return "This token takes a fee or changes balances when it moves, so Handshake can't trade it. Nothing was sent.";
+    if (raw.includes("token transferFrom failed")) return "The token transfer failed: the maker's funds or approval may have changed. Nothing was sent.";
     if (raw.includes("exceeds per-offer cap")) return "That's above Handshake's beta limit per offer. Try a smaller amount.";
     if (raw.includes("could not coalesce error") || raw.includes("missing response")) {
       return "The chain 1404 RPC didn't return a usable response for that query — it may be overloaded or rate-limiting. Try refreshing in a moment.";
@@ -1160,12 +1194,11 @@
 
   // -------------------------------------------------------------------
   // Terms of Service click-wrap gate
-  // DRAFT LANGUAGE — NOT REVIEWED BY A LAWYER. Unlike a pure router, this
-  // contract DOES hold assets in custody for the duration an offer is open
-  // (that's what escrow means) — the language below reflects that honestly
-  // rather than reusing "we never hold funds," which would be false here.
+  // DRAFT LANGUAGE — NOT REVIEWED BY A LAWYER. v4 never holds funds: offers are
+  // terms only and assets move wallet to wallet when filled. Section 2 says so.
+  // Bumping the storage key makes everyone agree again to the changed terms.
   // -------------------------------------------------------------------
-  const TOS_STORAGE_KEY = "handshake_tos_agreed_v1";
+  const TOS_STORAGE_KEY = "handshake_tos_agreed_v2";
   const HANDSHAKE_TOS_TEXT = `
 1. Experimental software, provided AS IS. Handshake is early-stage software
 interacting with an unaudited smart contract on BlockDAG (chain ID 1404). It
@@ -1173,16 +1206,15 @@ is provided strictly "AS IS" and "AS AVAILABLE," with no warranty of any
 kind. You assume 100% of the risk of using it, including smart contract bugs,
 exploits, chain reorganizations or forks, network outages, and loss of funds.
 
-2. How custody actually works here. This is an escrow contract: when you
-create an offer, the asset you're giving is locked into the smart contract
-itself — automatically, by its immutable code — until the offer is filled by
-a counterparty or you cancel it for a full refund. The operators of this
-interface never gain the ability to access, move, freeze, or redirect assets
-inside an open offer; only the contract's own code can release them, to
-either the maker (on cancel) or the taker (on fill). This is meaningfully
-different from a custodial service where a person or company controls your
-funds — but it is still custody, held by code rather than by us, for as long
-as an offer sits open.
+2. How custody works here. Handshake does not hold your funds. When you
+create an offer, the contract records only its terms; the asset you're giving
+stays in your own wallet, covered by a token approval you grant (BDAG is
+offered as WBDAG, Reef's 1:1 wrapped BDAG). If a counterparty fills your
+offer, the contract moves exactly the agreed amounts between the two wallets
+in a single transaction, or nothing moves. You can cancel an offer, or remove
+the approval in your wallet, at any time. Neither the operators of this
+interface nor the contract owner can access, move, freeze, or redirect your
+assets.
 
 3. No investment, financial, or legal advice. Nothing on this site is
 investment, financial, tax, or legal advice.
@@ -1543,10 +1575,10 @@ details to be added here before this is used for real.]
     if (!userAddress) { el.innerHTML = ""; return; }
     try {
       if (direction === "giveNative") {
-        const bal = await withReadFallback((p) => p.getBalance(userAddress));
+        const [bal, wbal] = await withReadFallback((p) => Promise.all([p.getBalance(userAddress), new ethers.Contract(WBDAG_ADDRESS, WBDAG_ABI, p).balanceOf(userAddress)]));
         if (seq !== balSeq) return;
-        const v = ethers.formatEther(bal);
-        el.innerHTML = `You have ${fmtNum(Number(v))} ${NATIVE_SYMBOL} (keep a little for gas).`;
+        const v = ethers.formatEther(bal), w = ethers.formatEther(wbal);
+        el.innerHTML = `You have ${fmtNum(Number(v))} ${NATIVE_SYMBOL}${wbal > 0n ? ` and ${fmtNum(Number(w))} WBDAG` : ""} (keep a little ${NATIVE_SYMBOL} for gas). Offers in BDAG use WBDAG; the form wraps it for you.`;
       } else {
         const addr = document.getElementById("tokenAddrInput").value.trim();
         if (!ethers.isAddress(addr)) { el.innerHTML = ""; return; }
@@ -1605,39 +1637,57 @@ details to be added here before this is used for real.]
       const amountTokenUnits = ethers.parseUnits(amountTokenStr, decimals);
 
       // Check the contract's own rules first, so users get a clear message instead of a failed transaction.
+      let otherCap = 0n;
       const [isPaused, cap] = await withReadFallback(p => {
         const c = getReadContract(p);
-        return Promise.all([c.paused(), c.maxOfferAmount(direction === "giveNative" ? ethers.ZeroAddress : tokenAddr)]);
-      });
+        return Promise.all([c.paused(), c.maxOfferAmount(direction === "giveNative" ? ethers.ZeroAddress : tokenAddr), c.maxOfferAmount(direction === "giveNative" ? tokenAddr : ethers.ZeroAddress)]);
+      }).then(([pz, c1, c2]) => { otherCap = c2; return [pz, c1]; });
       if (isPaused) {
-        statusEl.textContent = "New offers are paused right now. Existing offers can still be filled or cancelled.";
+        statusEl.textContent = "Handshake is paused right now: no new offers or fills. You can still cancel your offers.";
         statusEl.className = "status-msg error";
         btn.disabled = false;
         return;
       }
       const lockedAmount = direction === "giveNative" ? amountNativeWei : amountTokenUnits;
+      const otherAmount = direction === "giveNative" ? amountTokenUnits : amountNativeWei;
+      if (otherCap > 0n && otherAmount > otherCap) {
+        const capText = direction === "giveNative"
+          ? `${ethers.formatUnits(otherCap, decimals)} ${(await getTokenMeta(tokenAddr)).symbol}`
+          : `${ethers.formatEther(otherCap)} ${NATIVE_SYMBOL}`;
+        statusEl.textContent = `During the beta, each offer can be at most ${capText}. Lower the amount and try again.`;
+        statusEl.className = "status-msg error";
+        btn.disabled = false;
+        return;
+      }
       if (cap > 0n && lockedAmount > cap) {
         const capText = direction === "giveNative"
           ? `${ethers.formatEther(cap)} ${NATIVE_SYMBOL}`
           : `${ethers.formatUnits(cap, decimals)} ${(await getTokenMeta(tokenAddr)).symbol}`;
-        statusEl.textContent = `During the beta, each offer can lock at most ${capText}. Lower the amount and try again.`;
+        statusEl.textContent = `During the beta, each offer can be at most ${capText}. Lower the amount and try again.`;
         statusEl.className = "status-msg error";
         btn.disabled = false;
         return;
       }
 
-      if (direction === "giveNative") {
-        const nativeBal = await provider.getBalance(userAddress);
-        if (nativeBal < amountNativeWei) {
-          statusEl.textContent = `You have ${ethers.formatEther(nativeBal)} ${NATIVE_SYMBOL}, but this offer needs ${amountNativeStr} ${NATIVE_SYMBOL} (plus gas). Lower the amount or fund your wallet first.`;
-          statusEl.className = "status-msg error";
-          btn.disabled = false;
-          return;
+      // v4: nothing is deposited. The maker's side stays in their wallet under an approval:
+      // the token itself, or WBDAG (wrapped 1:1 here if needed) when the maker gives BDAG.
+      const giveNative = direction === "giveNative";
+      const giveAsset = giveNative ? new ethers.Contract(WBDAG_ADDRESS, WBDAG_ABI, signer) : token;
+      const giveAmount = giveNative ? amountNativeWei : amountTokenUnits;
+      if (giveNative) {
+        const [wBal, nativeBal] = await Promise.all([giveAsset.balanceOf(userAddress), provider.getBalance(userAddress)]);
+        if (wBal < giveAmount) {
+          const need = giveAmount - wBal;
+          if (nativeBal < need) {
+            statusEl.textContent = `This offer needs ${amountNativeStr} ${NATIVE_SYMBOL}. You have ${ethers.formatEther(wBal)} WBDAG and ${ethers.formatEther(nativeBal)} ${NATIVE_SYMBOL}. Lower the amount or fund your wallet first (keep a little for gas).`;
+            statusEl.className = "status-msg error";
+            btn.disabled = false;
+            return;
+          }
+          statusEl.textContent = `Step 1 of 3: wrap ${ethers.formatEther(need)} ${NATIVE_SYMBOL} into WBDAG (stays in your wallet, 1:1). Confirm in your wallet…`;
+          const wrapTx = await giveAsset.deposit({ value: need });
+          await wrapTx.wait();
         }
-        statusEl.textContent = "Confirm the transaction in your wallet…";
-        const tx = await contract.createOfferGivingNative(tokenAddr, amountTokenUnits, taker, { value: amountNativeWei });
-        statusEl.textContent = "Creating offer…";
-        await tx.wait();
       } else {
         const tokenBal = await token.balanceOf(userAddress).catch(() => null);
         if (tokenBal !== null && tokenBal < amountTokenUnits) {
@@ -1647,19 +1697,19 @@ details to be added here before this is used for real.]
           btn.disabled = false;
           return;
         }
-        statusEl.textContent = "Approving token spend…";
-        const allowance = await token.allowance(userAddress, CONTRACT_ADDRESS);
-        if (allowance < amountTokenUnits) {
-          const approveTx = await token.approve(CONTRACT_ADDRESS, amountTokenUnits);
-          await approveTx.wait();
-        }
-        statusEl.textContent = "Confirm the offer transaction in your wallet…";
-        const tx = await contract.createOfferGivingToken(tokenAddr, amountTokenUnits, amountNativeWei, taker);
-        statusEl.textContent = "Creating offer…";
-        await tx.wait();
       }
+      const allowance = await giveAsset.allowance(userAddress, CONTRACT_ADDRESS);
+      if (allowance < giveAmount) {
+        statusEl.textContent = `${giveNative ? "Step 2 of 3: approve" : "Step 1 of 2: approve"} Handshake to move ${giveNative ? "this WBDAG" : "these tokens"} only if your offer is filled. Confirm in your wallet…`;
+        const approveTx = await giveAsset.approve(CONTRACT_ADDRESS, giveAmount);
+        await approveTx.wait();
+      }
+      statusEl.textContent = "Last step: confirm the offer in your wallet (nothing is deposited)…";
+      const tx = await contract.createOffer(tokenAddr, amountTokenUnits, amountNativeWei, giveNative, taker, 0);
+      statusEl.textContent = "Posting offer…";
+      await tx.wait();
 
-      statusEl.textContent = "Offer created.";
+      statusEl.textContent = "Offer posted. Your funds stay in your wallet until someone fills it.";
       statusEl.className = "status-msg success";
       disarmCreate();
       document.getElementById("priceCheck").innerHTML = "";
@@ -1774,10 +1824,11 @@ details to be added here before this is used for real.]
       const total = Number(await withReadFallback((p) => getReadContract(p).totalOffers()));
       if (id < 1 || id > total) throw new Error("missing");
       const o = await withReadFallback((p) => getReadContract(p).getOffer(id));
-      const status = STATUS_LABEL[Number(o.status)] || "None";
+      const status = offerStatus(o);
       if (status === "None") throw new Error("missing");
+      if (status === "Open") await checkReady([id]);
       const meta = await getTokenMeta(o.token).catch(() => null);
-      const note = status === "Open" ? "" : `<span>${status === "Filled" ? "This offer has already been filled." : "This offer was cancelled by its maker."}</span>`;
+      const note = status === "Open" ? "" : `<span>${status === "Filled" ? "This offer has already been filled." : status === "Expired" ? "This offer has expired." : "This offer was cancelled by its maker."}</span>`;
       box.innerHTML = `<div class="shared-head"><span>Shared offer #${id}</span>${note}<button type="button" class="link-btn" onclick="history.replaceState(null,'',location.pathname+location.search);showSharedOffer()">Close</button></div>` +
         renderOfferCard(id, o, status, meta).replace('class="offer-card ', 'class="offer-card shared ');
       attachOfferActions();
@@ -1793,11 +1844,16 @@ details to be added here before this is used for real.]
 
   // Reads no longer depend on a connected wallet — show live data immediately
   // so visitors can browse before deciding to connect.
-  refreshStats();
-  loadOffers();
-  showSharedOffer();
-  loadQuickPick();
-  loadTradeHistory();
+  if (CONTRACT_ADDRESS) {
+    refreshStats();
+    loadOffers();
+    showSharedOffer();
+    loadQuickPick();
+    loadTradeHistory();
+  } else {
+    // Safety net: the v4 address hasn't been filled in yet.
+    document.getElementById("offerList").innerHTML = '<div class="gallery-empty">Handshake is being upgraded. Older offers are on the <a href="/v3/">older offers page</a>.</div>';
+  }
 
   // ---- Live RPC status panel — checks each RPC directly from this browser ----
   function shortRpcLabel(url) {
@@ -1972,7 +2028,8 @@ details to be added here before this is used for real.]
       scanCursor -= ids.length;
       const got = await Promise.all(ids.map((id) => withReadFallback((p) => getReadContract(p).getOffer(id)).then((o) => ({ id, o })).catch(() => null)));
       if (seq !== loadSeq) return false;
-      got.forEach((g) => { if (g) offerCache.set(g.id, { id: g.id, o: g.o, status: STATUS_LABEL[Number(g.o.status)] || "None" }); });
+      got.forEach((g) => { if (g) offerCache.set(g.id, { id: g.id, o: g.o, status: offerStatus(g.o) }); });
+      await checkReady(got.filter((g) => g && offerStatus(g.o) === "Open").map((g) => g.id));
     }
     return true;
   }
@@ -2045,6 +2102,16 @@ details to be added here before this is used for real.]
   document.getElementById("tokFilter").addEventListener("change", async () => { shownCount = PAGE; const seq = loadSeq; await scanMore(shownCount, seq); renderOfferList(); });
   document.getElementById("sortSel").addEventListener("change", () => renderOfferList());
 
+  // v4: an open offer can't be filled if the maker has since moved or un-approved their funds.
+  const readyById = new Map();
+  async function checkReady(ids) {
+    await Promise.all(ids.map((id) => withReadFallback((p) => getReadContract(p).offerReady(id)).then((r) => readyById.set(id, r)).catch(() => {})));
+  }
+  function offerStatus(o) {
+    const st = STATUS_LABEL[Number(o.status)] || "None";
+    if (st === "Open" && Number(o.expiresAt) && Date.now() / 1000 > Number(o.expiresAt)) return "Expired";
+    return st;
+  }
   function renderOfferCard(id, o, status, tokenMeta) {
     const nativeAmt = ethers.formatEther(o.amountNative);
     const meta = tokenMeta || { symbol: "TOKEN", decimals: 18 };
@@ -2058,8 +2125,9 @@ details to be added here before this is used for real.]
 
     const isMaker = o.maker.toLowerCase() === (userAddress || "").toLowerCase();
     const isRestricted = o.taker !== ethers.ZeroAddress;
-    const canFill = status === "Open" && !isMaker && (!isRestricted || o.taker.toLowerCase() === (userAddress || "").toLowerCase());
-    const canCancel = status === "Open" && isMaker;
+    const unavailable = status === "Open" && readyById.get(Number(id)) === false;
+    const canFill = status === "Open" && !unavailable && !isMaker && (!isRestricted || o.taker.toLowerCase() === (userAddress || "").toLowerCase());
+    const canCancel = (status === "Open" || status === "Expired") && isMaker;
 
     let actions = "";
     if (canFill) {
@@ -2082,7 +2150,8 @@ details to be added here before this is used for real.]
           ${offerAgeText(o)} · maker ${o.maker.slice(0,6)}…${o.maker.slice(-4)}
           ${isRestricted ? ` · <span class="private-tag">restricted to ${o.taker.slice(0,6)}…${o.taker.slice(-4)}</span>` : " · open to anyone"}
         </div>
-        ${status === "Open" ? `<div class="offer-reef" data-reef-id="${id}"></div>` : ""}
+        ${unavailable ? `<div class="offer-meta" style="color:var(--give)">Can't be filled right now: ${isMaker ? "your wallet no longer has the funds or approval for this offer. Top up or re-approve, or cancel it." : "the maker no longer has the funds or approval in their wallet."}</div>` : ""}
+        ${status === "Open" && !unavailable ? `<div class="offer-reef" data-reef-id="${id}"></div>` : ""}
         <div class="offer-actions">${actions}<button type="button" class="link-btn" onclick="copyOfferLink(${id}, this)" title="Copy a link straight to this offer">Copy link</button></div>
         <div class="status-msg" id="offerStatus-${id}"></div>
       </div>
@@ -2107,7 +2176,15 @@ details to be added here before this is used for real.]
         statusEl.textContent = "Cancelling…";
         const tx = await contract.cancelOffer(id);
         await tx.wait();
-      } else if (action === "fillGivingToken") {
+      } else if (action === "fillGivingToken" || action === "fillGivingNative") {
+        if (!(await withReadFallback(p => getReadContract(p).offerReady(id)))) {
+          statusEl.textContent = "This offer can't be filled right now: the maker no longer has the funds or approval in their wallet, or it has expired. Nothing was sent.";
+          statusEl.className = "status-msg error";
+          btn.disabled = false;
+          return;
+        }
+      }
+      if (action === "fillGivingToken") {
         const o = await withReadFallback(p => getReadContract(p).getOffer(id));
         const token = new ethers.Contract(o.token, ERC20_ABI, signer);
         const decimals = await token.decimals().catch(() => 18);
@@ -2126,7 +2203,7 @@ details to be added here before this is used for real.]
           await approveTx.wait();
         }
         statusEl.textContent = "Filling offer…";
-        const tx = await contract.fillOfferGivingToken(id);
+        const tx = await contract.fill(id);
         await tx.wait();
       } else if (action === "fillGivingNative") {
         const o = await withReadFallback(p => getReadContract(p).getOffer(id));
@@ -2138,7 +2215,7 @@ details to be added here before this is used for real.]
           return;
         }
         statusEl.textContent = "Sending BDAG…";
-        const tx = await contract.fillOfferGivingNative(id, { value: o.amountNative });
+        const tx = await contract.fill(id, { value: o.amountNative });
         await tx.wait();
       }
       statusEl.textContent = "Done.";

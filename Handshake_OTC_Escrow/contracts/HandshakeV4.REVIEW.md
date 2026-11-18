@@ -53,5 +53,7 @@ transactions) and ran both trade directions with real transactions. Fees were co
 2. Hand ownership to the 2-of-3 multisig `0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc`; set the same per-offer caps.
 3. Pause **new offers** on v3 (`setPaused(true)` from the multisig). Existing v3 offers can still be filled or
    cancelled, as before.
-4. Update the site: a "Wrap BDAG" step for BDAG sellers, approvals instead of deposits, and stale offers greyed
-   out with `offerReady`.
+4. Site: put the v4 address in `CONTRACT_ADDRESS` (index.html) and `ESCROW` (embed/index.html), then merge the
+   site PR. The main page then makes v4 offers (with a one-click "wrap BDAG" step for BDAG sellers and approvals
+   instead of deposits, and greys out offers whose maker has moved their funds); `/v3/` keeps working for older
+   offers.

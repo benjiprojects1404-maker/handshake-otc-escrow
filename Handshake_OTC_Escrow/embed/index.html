@@ -44,13 +44,14 @@ a{color:var(--accent)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
 <script>
 (function () {
-  const ESCROW = "0xD907701A2D96f7D0E7596b02737C9F36446cf5CA";
+  const ESCROW = ""; // Handshake v4, same address as CONTRACT_ADDRESS on the main page. FILL IN ON DEPLOY DAY.
   const SITE = "https://handshakeotc.fyi";
   const RPCS = ["https://rpc.community.bdag-us.org", "https://rpc.capedag.com", "https://rms-bdag-rpc.de/api/rpc-live", "https://rpc.dvdmining.com", "https://rpc.cms-mining-pool.net",
     "https://rpc.england.bdag-us.org", "https://rpc.dagcore.net", "https://rpc.escrowhubs.io", "https://rpc.brazil.bdag-us.org",
     "https://rpc.bdagexplorer.com", "https://rpc.blockdag.engineering"];
   const ABI = ["function totalOffers() view returns (uint256)",
-    "function getOffer(uint256) view returns (address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint16 feeBpsAtCreation)"];
+    "function getOffer(uint256) view returns (tuple(address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint64 expiresAt, uint16 feeBpsAtCreation))",
+    "function offerReady(uint256) view returns (bool)"];
   const ERC20 = ["function symbol() view returns (string)", "function decimals() view returns (uint8)"];
   const app = document.getElementById("app");
   const q = new URLSearchParams(location.search);
@@ -77,6 +78,7 @@ a{color:var(--accent)}
       const got = await Promise.all(ids.map((i) => c.getOffer(i).then((o) => ({ id: i, o })).catch(() => null)));
       for (const g of got) {
         if (!g || Number(g.o.status) !== 1) continue;
+        if (!(await c.offerReady(g.id).catch(() => false))) continue; // expired, or the maker's funds moved
         if (g.o.taker !== ethers.ZeroAddress) continue; // private offers stay private
         if (token && g.o.token.toLowerCase() !== token) continue;
         out.push(g);
@@ -117,7 +119,7 @@ a{color:var(--accent)}
       const title = token ? `Open OTC offers for ${esc(sym)}` : "Open OTC offers";
       app.innerHTML = `<div class="w"><div class="head"><b>${title}</b><a href="${SITE}/" target="_blank" rel="noopener">Handshake OTC</a></div>` +
         (cards.length ? cards.join("") : `<div class="empty">No open offers${token ? " for " + esc(sym) : ""} right now. <a href="${SITE}/" target="_blank" rel="noopener">Post one on Handshake</a>.</div>`) +
-        `<div class="foot">Peer-to-peer escrow on chain 1404. Unaudited beta: check the token address before you trade. Not for US/UK persons.</div></div>`;
+        `<div class="foot">Peer-to-peer OTC on chain 1404: funds stay in wallets until a trade settles. Unaudited beta: check the token address before you trade. Not for US/UK persons.</div></div>`;
     } catch (e) {
       app.innerHTML = `<div class="w"><div class="empty">Couldn't reach the chain right now. <a href="${SITE}/" target="_blank" rel="noopener">Open Handshake</a>.</div></div>`;
     }
@@ -137,7 +139,7 @@ a{color:var(--accent)}
       <label for="b-code">Embed code</label>
       <textarea id="b-code" readonly></textarea>
       <button type="button" id="b-copy">Copy code</button>
-      <p class="note">Private offers (restricted to one address) are never shown in the widget. Trades go through the same escrow contract and 0.25% fee as on handshakeotc.fyi.</p>
+      <p class="note">Private offers (restricted to one address) are never shown in the widget. Trades go through the same Handshake contract and 0.25% fee as on handshakeotc.fyi.</p>
       <div class="preview" id="b-preview"></div>
     </div>`;
     const tokenEl = document.getElementById("b-token"), limitEl = document.getElementById("b-limit"), themeEl = document.getElementById("b-theme");
