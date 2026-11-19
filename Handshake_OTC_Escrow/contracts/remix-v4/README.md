@@ -19,3 +19,12 @@ correctly, a WBDAG-for-token trade filled with the fee paid and the contract lef
 moved to the multisig; the deploy page ran all three steps against that chain.
 
 Remove `deploy-v4/` from the site once deployed.
+
+## Deployed
+
+| | |
+|---|---|
+| HandshakeV4 | `0x7E13D7dC4B35a5a1681Ecb4237580A7d90aeAffe` (chain 1404, 19 Nov 2026, from `0xca83…99b5`, 1,873,838 gas, the same as the local test) |
+| Deploy tx | `0x6379084aba2516ad9fce813727624e1e400a187c38c563b1515ba9893a341d91` |
+| BDAG cap | 1,000,000 BDAG per offer (same as v3), tx `0x1dcb7eabf8bfc0885abb6fc2fe5ec0c24ce1e5ecf3818b570648ee95b866e659` |
+| Owner | Reef admin multisig `0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc`, tx `0x3cba5108753c4c9eaf6bf344ea21f82b609e00e0e93dcbdb4d1195d5c5f5d248` |
