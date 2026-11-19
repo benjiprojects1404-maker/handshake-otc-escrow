@@ -28,3 +28,4 @@ Remove `deploy-v4/` from the site once deployed.
 | Deploy tx | `0x6379084aba2516ad9fce813727624e1e400a187c38c563b1515ba9893a341d91` |
 | BDAG cap | 1,000,000 BDAG per offer (same as v3), tx `0x1dcb7eabf8bfc0885abb6fc2fe5ec0c24ce1e5ecf3818b570648ee95b866e659` |
 | Owner | Reef admin multisig `0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc`, tx `0x3cba5108753c4c9eaf6bf344ea21f82b609e00e0e93dcbdb4d1195d5c5f5d248` |
+| Verified | explorer.bdagexplorer.com, full match (solc 0.8.24, optimizer 200, berlin), 19 Nov 2026 |
