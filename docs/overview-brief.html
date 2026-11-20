@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Handshake Overview &amp; Testing Brief</title>
+<!-- Source of Handshake_OTC_Escrow/overview.pdf. Rebuild: node docs/build-overview.cjs -->
+<style>
+@page{size:A4;margin:12mm 14mm 12mm}
+:root{--ink:#0b1f24;--muted:#4c6168;--faint:#7a8d93;--line:#d5e3e7;--teal:#087f9e;--teal-soft:#e6f4f6;--plat:#44525b;--ok:#1a9b5f;--warn:#a86f00}
+*{box-sizing:border-box}
+body{margin:0;font:400 9.8pt/1.45 "Inter","Helvetica Neue",Arial,sans-serif;color:var(--ink)}
+.beta{font-size:8.6pt;color:#8a4a00;background:#fff4e0;border:1px solid #f1d39a;border-radius:6px;padding:5px 10px;text-align:center;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--teal);padding-bottom:8px;margin-bottom:16px}
+.brand{font:700 20pt/1 "Inter",Arial,sans-serif;letter-spacing:-.5px}.brand i{color:var(--teal);font-style:normal}
+.meta{font-size:8.6pt;color:var(--muted);text-align:right}
+.kicker{font-size:8pt;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700;margin:0 0 4px}
+h1{font:700 22pt/1.15 "Inter",Arial,sans-serif;margin:0 0 8px;letter-spacing:-.4px}
+.lead{font-size:11.2pt;color:var(--muted);margin:0 0 14px;max-width:165mm}
+.callout{background:var(--teal-soft);border-left:4px solid var(--teal);border-radius:4px;padding:9px 12px;margin:0 0 16px;font-size:10pt}
+.callout b{color:var(--teal)}
+h2{font:700 12.5pt "Inter",Arial,sans-serif;margin:13px 0 5px;break-after:avoid}
+h2 small{font-weight:400;font-size:8.6pt;color:var(--faint);margin-left:6px}
+p{margin:0 0 8px}
+table{width:100%;border-collapse:collapse;font-size:9pt;break-inside:auto}
+tr{break-inside:avoid}
+th{text-align:left;font-size:7.8pt;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;border-bottom:1px solid var(--line);padding:5px 6px}
+td{border-bottom:1px solid var(--line);padding:4px 6px;vertical-align:top}
+td:first-child{font-weight:600;width:34%}
+.mono{font-family:"DejaVu Sans Mono",Menlo,monospace;font-size:8.2pt;color:var(--muted);word-break:break-all}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 4px}
+.step{border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:9pt}
+.step b{display:block;color:var(--teal);font-size:9.6pt;margin-bottom:2px}
+.ok{color:var(--ok);font-weight:600}.todo{color:var(--warn);font-weight:600}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+ul{margin:4px 0 8px;padding-left:16px}li{margin:2px 0}
+.foot{margin-top:16px;border-top:1px solid var(--line);padding-top:8px;font-size:8.2pt;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="beta">BETA: smart contracts not independently audited, on an early-stage chain. Use only amounts you can afford to lose.</div>
+<div class="top">
+  <div class="brand">handshake<i>.</i></div>
+  <div class="meta">Overview &amp; Testing Brief · updated 20 November 2026<br>handshakeotc.fyi · BlockDAG chain 1404 · @benji107</div>
+</div>
+
+<p class="kicker">Handshake v4 · live since 19 November 2026</p>
+<h1>Peer-to-peer OTC that never holds your funds</h1>
+<p class="lead">Handshake lets anyone swap BDAG for any ERC-20 token on BlockDAG (chain 1404), or the reverse, at a price they set, with no order book, no pooled liquidity and no middleman. Both sides settle in one transaction, or nothing moves.</p>
+<div class="callout"><b>What changed in v4:</b> earlier versions were an escrow: the maker's BDAG or tokens sat in the contract until a fill or a cancel. v4 stores only the <i>terms</i> of an offer. The maker's side stays in their own wallet under an exact approval until someone fills it, and the fill moves both sides wallet to wallet. The contract holds nothing, ever: not between trades, not during them.</div>
+
+<h2>How a trade works</h2>
+<div class="steps">
+  <div class="step"><b>1. Approve</b>The maker approves exactly the amount they're offering. Selling BDAG? It's wrapped 1:1 to WBDAG (Reef's wrapped BDAG) first, in one click.</div>
+  <div class="step"><b>2. Post</b>The maker names the price, and can make the offer private to one address and give it an expiry date.</div>
+  <div class="step"><b>3. Fill</b>The taker pays; both sides move in one transaction. A BDAG seller's WBDAG is unwrapped so the taker gets real BDAG.</div>
+  <div class="step"><b>4. Or cancel</b>Any time. There's nothing to refund because nothing left the wallet. Revoking the approval also stops fills.</div>
+</div>
+<p style="font-size:9.2pt;color:var(--muted)">If a maker spends or moves their funds after posting, the fill simply fails and the taker keeps everything; the site greys the offer out as "not fillable" before anyone tries.</p>
+
+<h2>What the site does</h2>
+<table>
+  <tr><th>Feature</th><th>What it does</th></tr>
+  <tr><td>Create an offer</td><td>BDAG for a token, or a token for BDAG, at the price you set; approve instead of deposit</td></tr>
+  <tr><td>Private offers and expiry</td><td>Optionally only one named address can fill; optionally the offer expires at a set time</td></tr>
+  <tr><td>Fill and cancel</td><td>Fill any open offer in one transaction; cancel your own any time, even while the desk is paused</td></tr>
+  <tr><td>Not-fillable detection</td><td>Offers whose maker no longer has the balance or approval are greyed out, so takers don't waste a transaction</td></tr>
+  <tr><td>Exact approvals</td><td>Approvals are for exactly the offer amount, never an unlimited allowance</td></tr>
+  <tr><td>Checks before signing</td><td>Balance, approval, per-offer beta limit and pause state are checked first, with a clear message instead of a failed transaction</td></tr>
+  <tr><td>Token check</td><td>Confirms a token address is a real contract and shows its symbol before you trade</td></tr>
+  <tr><td>Older offers</td><td>Offers made on the v3 escrow can still be filled or cancelled at handshakeotc.fyi/v3/</td></tr>
+  <tr><td>RPC status and embed widget</td><td>Community BlockDAG endpoints checked live with automatic failover; a widget other sites can embed</td></tr>
+</table>
+
+<h2>Contracts and settings <small>Solidity 0.8.24 · no imports · not upgradeable · EVM berlin</small></h2>
+<table>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td>HandshakeV4 (live)</td><td>Verified on explorer.bdagexplorer.com (full match)<br><span class="mono">0x7E13D7dC4B35a5a1681Ecb4237580A7d90aeAffe</span></td></tr>
+  <tr><td>Owner</td><td>2-of-3 hardware-wallet multisig (Trezor and two Ledgers)<br><span class="mono">0x4E2401bFD24c66166fABF9Cc5cD5B6B2c5c860fc</span></td></tr>
+  <tr><td>Fee</td><td>0.25% of the BDAG side of each fill, hard-capped at 3% in the contract. Each offer records the fee when it's made, so a later change never affects an open offer</td></tr>
+  <tr><td>Fee recipient</td><td>Project wallet <span class="mono">0x26bDba7b184df8b88965Bed46AEd6ea0E60fF940</span></td></tr>
+  <tr><td>Beta limit</td><td>1,000,000 BDAG per offer</td></tr>
+  <tr><td>Owner powers</td><td>Fee (≤3%), fee recipient, per-offer limits, pause (stops new offers and fills; cancelling always works), two-step hand-over. All need two of three hardware wallets. No function can move anyone's funds, and the contract holds none</td></tr>
+  <tr><td>WBDAG</td><td>Reef's wrapped BDAG, 1:1 <span class="mono">0x62ba5c4F067989a7f6644488C875bEa69Bfa1FBA</span></td></tr>
+  <tr><td>Earlier contracts</td><td>v3 escrow <span class="mono">0xD907701A2D96f7D0E7596b02737C9F36446cf5CA</span>: paused for new offers; existing offers can still be filled or cancelled. Original v1 <span class="mono">0x3A8716b7260D2F808250d37F4534Ebe22b6C4b8a</span>: paused, never held an offer</td></tr>
+</table>
+
+<h2>Security and testing <small>A thorough in-house review; no independent professional audit yet</small></h2>
+<table>
+  <tr><th>Check</th><th>Result</th></tr>
+  <tr><td>Unit and fuzz tests</td><td class="ok">21 Foundry tests pass: both trade directions with every balance checked, maker moving or revoking funds, expiry, private taker, fill-once, fee-on-transfer tokens refused, fee fixed at creation, caps, pause, admin limits, a maker that refuses BDAG, and a re-entering token</td></tr>
+  <tr><td>Invariant test</td><td class="ok">Across random create / fill / cancel / move-away sequences (1,000 runs × 200 calls), the contract never holds BDAG, WBDAG or tokens</td></tr>
+  <tr><td>Checks kept from v3</td><td>Tokens must have code (closes the "no-code token" fake-payment hole fixed in v3); receiver balances must rise by exactly the amount; safe transfers for tokens that return nothing; reentrancy guard</td></tr>
+  <tr><td>Build and rehearsal</td><td>Compiled for EVM berlin with no PUSH0; the exact deploy bytes ran on a local chain-1404 copy first: deploy, settings, a trade with the fee paid, ownership hand-over</td></tr>
+  <tr><td>Live on mainnet</td><td class="ok">Deployed 19 Nov 2026 using the same gas as the rehearsal; the first live trade filled with the fee paid and the contract left holding nothing (it holds 0 BDAG today)</td></tr>
+  <tr><td>Deployed-code check</td><td class="ok">Verified on the explorer with a full match (solc 0.8.24, optimizer 200, berlin)</td></tr>
+  <tr><td>Migration</td><td>v3 paused for new offers; v4 owned by the multisig and given v3's limit the same day</td></tr>
+  <tr><td>Vulnerability reports</td><td>security@handshakeotc.fyi</td></tr>
+  <tr><td>Not done yet</td><td class="todo">An independent audit by a professional security firm, and a bug-bounty programme</td></tr>
+</table>
+
+<div class="foot">Handshake is built and run by Undercurrent Works. Beta software, not independently audited. Not financial advice. Source, tests and deploy notes: github.com/benjiprojects1404-maker/handshake-otc-escrow · Contract and figures as read from chain 1404 on 20 November 2026.</div>
+</body>
+</html>
