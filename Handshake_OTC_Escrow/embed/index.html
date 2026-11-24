@@ -44,7 +44,7 @@ a{color:var(--accent)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
 <script>
 (function () {
-  const ESCROW = "0x7E13D7dC4B35a5a1681Ecb4237580A7d90aeAffe"; // Handshake v4 (same as CONTRACT_ADDRESS on the main page)
+  const ESCROW = "0xDf55Ac60F6436CD06b221b4Fd7252990EFC5C040"; // Handshake v4.1 (same as CONTRACT_ADDRESS on the main page)
   const SITE = "https://handshakeotc.fyi";
   const RPCS = ["https://rpc.community.bdag-us.org", "https://rpc.capedag.com", "https://rms-bdag-rpc.de/api/rpc-live", "https://rpc.dvdmining.com", "https://rpc.cms-mining-pool.net",
     "https://rpc.england.bdag-us.org", "https://rpc.dagcore.net", "https://rpc.escrowhubs.io", "https://rpc.brazil.bdag-us.org",
@@ -114,7 +114,7 @@ a{color:var(--accent)}
           ? `Sell <span class="t">${fmt(tok)} ${esc(m.sym)}</span> for <span class="g">${fmt(nat)} BDAG</span>`
           : `Buy <span class="t">${fmt(tok)} ${esc(m.sym)}</span> for <span class="g">${fmt(nat)} BDAG</span>`;
         const side = `1 ${esc(m.sym)} = ${fmt(nat / tok)} BDAG`;
-        return `<div class="card"><div><div class="trade">${what}</div><div class="meta">${side} · offer #${id}</div></div><a class="btn" href="${SITE}/#offer=${id}" target="_blank" rel="noopener">View &amp; fill</a></div>`;
+        return `<div class="card"><div><div class="trade">${what}</div><div class="meta">${side} · offer #${id}</div></div><a class="btn" href="${SITE}/#c=4.1&offer=${id}" target="_blank" rel="noopener">View &amp; fill</a></div>`;
       });
       const title = token ? `Open OTC offers for ${esc(sym)}` : "Open OTC offers";
       app.innerHTML = `<div class="w"><div class="head"><b>${title}</b><a href="${SITE}/" target="_blank" rel="noopener">Handshake OTC</a></div>` +

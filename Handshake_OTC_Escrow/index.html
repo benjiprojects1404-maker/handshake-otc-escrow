@@ -883,7 +883,8 @@
     <details class="qa">
       <summary>Where are my offers from before?</summary>
       <div class="qa-a">
-        Offers made on the original Handshake escrow (v3), where funds were deposited, are on the
+        Offers made before the v4.1 upgrade (24 Nov 2026) are on the <a href="/v4/">v4 offers page</a>, where you can
+        still fill or cancel them. Offers on the original escrow (v3), where funds were deposited, are on the
         <a href="/v3/">older offers page</a>. You can still fill them, or cancel yours there to get your deposit back.
       </div>
     </details>
@@ -936,7 +937,10 @@
   // ---------------------------------------------------------------------
   // Handshake v4 (contracts/HandshakeV4.sol): offers never hold funds. Deployed 19 Nov 2026, owned by the 2-of-3 multisig.
   // Offers made on the v3 escrow (0xD907…f5CA) live on /v3/.
-  const CONTRACT_ADDRESS = "0x7E13D7dC4B35a5a1681Ecb4237580A7d90aeAffe";
+  // Handshake v4.1 since 24 Nov 2026. Offers made on v4 (0x7E13…Affe) live on /v4/.
+  const CONTRACT_ADDRESS = "0xDf55Ac60F6436CD06b221b4Fd7252990EFC5C040";
+  // Offer ids restarted on v4.1, so links to v4 offers (#offer=N, no c=4.1) go to /v4/.
+  if (/^#offer=\d{1,9}$/.test(location.hash || "")) location.replace("/v4/" + location.hash);
   const WBDAG_ADDRESS = "0x62ba5c4F067989a7f6644488C875bEa69Bfa1FBA"; // Reef's wrapped BDAG (1:1)
   const CHAIN_ID_DEC = 1404;
   const CHAIN_ID_HEX = "0x57c"; // 1404 in hex
@@ -994,7 +998,8 @@
   const NATIVE_SYMBOL = "BDAG";
 
   const CONTRACT_ABI = [
-    "function createOffer(address token, uint256 amountToken, uint256 amountNative, bool makerGivesNative, address taker, uint64 expiresAt) returns (uint256)",
+    "function createOffer(address token, uint256 amountToken, uint256 amountNative, bool makerGivesNative, address taker, uint64 expiresAt, uint16 maxFeeBps) returns (uint256)",
+    "function committed(address maker, address asset) view returns (uint256)",
     "function fill(uint256 id) payable",
     "function cancelOffer(uint256 id)",
     "function totalOffers() view returns (uint256)",
@@ -1003,7 +1008,7 @@
     "function maxOfferAmount(address token) view returns (uint256)",
     "function offerReady(uint256 id) view returns (bool)",
     "function getOffer(uint256 id) view returns (tuple(address maker, address taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint8 status, uint64 createdAt, uint64 expiresAt, uint16 feeBpsAtCreation))",
-    "event OfferCreated(uint256 indexed id, address indexed maker, address indexed taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint64 expiresAt)",
+    "event OfferCreated(uint256 indexed id, address indexed maker, address indexed taker, address token, uint256 amountNative, uint256 amountToken, bool makerGivesNative, uint64 expiresAt, uint16 feeBps)",
     "event OfferFilled(uint256 indexed id, address indexed taker, uint256 feePaid)",
     "event OfferCancelled(uint256 indexed id)"
   ];
@@ -1674,10 +1679,13 @@ details to be added here before this is used for real.]
       const giveNative = direction === "giveNative";
       const giveAsset = giveNative ? new ethers.Contract(WBDAG_ADDRESS, WBDAG_ABI, signer) : token;
       const giveAmount = giveNative ? amountNativeWei : amountTokenUnits;
+      // v4.1: your balance and approval must cover all your open offers on this asset plus this one.
+      const committedNow = await contract.committed(userAddress, giveNative ? WBDAG_ADDRESS : tokenAddr).catch(() => 0n);
+      const required = giveAmount + committedNow;
       if (giveNative) {
         const [wBal, nativeBal] = await Promise.all([giveAsset.balanceOf(userAddress), provider.getBalance(userAddress)]);
-        if (wBal < giveAmount) {
-          const need = giveAmount - wBal;
+        if (wBal < required) {
+          const need = required - wBal;
           if (nativeBal < need) {
             statusEl.textContent = `This offer needs ${amountNativeStr} ${NATIVE_SYMBOL}. You have ${ethers.formatEther(wBal)} WBDAG and ${ethers.formatEther(nativeBal)} ${NATIVE_SYMBOL}. Lower the amount or fund your wallet first (keep a little for gas).`;
             statusEl.className = "status-msg error";
@@ -1690,22 +1698,26 @@ details to be added here before this is used for real.]
         }
       } else {
         const tokenBal = await token.balanceOf(userAddress).catch(() => null);
-        if (tokenBal !== null && tokenBal < amountTokenUnits) {
+        if (tokenBal !== null && tokenBal < required) {
           const meta = await getTokenMeta(tokenAddr);
-          statusEl.textContent = `You only hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}, but this offer needs ${amountTokenStr} ${meta.symbol}. Lower the amount or get more of the token first.`;
+          statusEl.textContent = committedNow > 0n
+            ? `You hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}. This offer needs ${amountTokenStr} and your open offers already promise ${ethers.formatUnits(committedNow, decimals)}, so you need ${ethers.formatUnits(required, decimals)} ${meta.symbol}. Lower the amount or cancel an open offer first.`
+            : `You only hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}, but this offer needs ${amountTokenStr} ${meta.symbol}. Lower the amount or get more of the token first.`;
           statusEl.className = "status-msg error";
           btn.disabled = false;
           return;
         }
       }
       const allowance = await giveAsset.allowance(userAddress, CONTRACT_ADDRESS);
-      if (allowance < giveAmount) {
-        statusEl.textContent = `${giveNative ? "Step 2 of 3: approve" : "Step 1 of 2: approve"} Handshake to move ${giveNative ? "this WBDAG" : "these tokens"} only if your offer is filled. Confirm in your wallet…`;
-        const approveTx = await giveAsset.approve(CONTRACT_ADDRESS, giveAmount);
+      if (allowance < required) {
+        statusEl.textContent = `${giveNative ? "Step 2 of 3: approve" : "Step 1 of 2: approve"} Handshake to move ${giveNative ? "this WBDAG" : "these tokens"} only if your offer is filled${committedNow > 0n ? " (the approval also covers your other open offers)" : ""}. Confirm in your wallet…`;
+        const approveTx = await giveAsset.approve(CONTRACT_ADDRESS, required);
         await approveTx.wait();
       }
       statusEl.textContent = "Last step: confirm the offer in your wallet (nothing is deposited)…";
-      const tx = await contract.createOffer(tokenAddr, amountTokenUnits, amountNativeWei, giveNative, taker, 0);
+      // The fee shown is the most this offer can be charged: if it rises before you sign, the create fails instead.
+      const maxFee = currentFeeBps ?? Number(await contract.feeBps());
+      const tx = await contract.createOffer(tokenAddr, amountTokenUnits, amountNativeWei, giveNative, taker, 0, maxFee);
       statusEl.textContent = "Posting offer…";
       await tx.wait();
 
@@ -1762,7 +1774,7 @@ details to be added here before this is used for real.]
     return `<span title="${new Date(t * 1000).toLocaleString()}">posted ${ago}</span>`;
   }
   function copyOfferLink(id, btn) {
-    const url = `${location.origin}${location.pathname}#offer=${id}`;
+    const url = `${location.origin}${location.pathname}#c=4.1&offer=${id}`;
     copyToClipboard(url, btn);
   }
   // Compare filling the offer with swapping the same amount on Reef right now (Reef's fee and price impact included).
@@ -1815,7 +1827,8 @@ details to be added here before this is used for real.]
   // Open a shared offer link: /#offer=12 shows that offer above the list, whatever its status.
   async function showSharedOffer() {
     const box = document.getElementById("sharedOffer");
-    const m = /^#offer=(\d{1,9})$/.exec(location.hash || "");
+    if (/^#offer=\d{1,9}$/.test(location.hash || "")) { location.replace("/v4/" + location.hash); return; } // a v4 link
+    const m = /^#(?:c=4\.1&)?offer=(\d{1,9})$/.exec(location.hash || "");
     if (!m) { box.style.display = "none"; box.innerHTML = ""; return; }
     const id = Number(m[1]);
     box.style.display = "";
@@ -2189,17 +2202,22 @@ details to be added here before this is used for real.]
         const token = new ethers.Contract(o.token, ERC20_ABI, signer);
         const decimals = await token.decimals().catch(() => 18);
         const tokenBal = await token.balanceOf(userAddress).catch(() => null);
-        if (tokenBal !== null && tokenBal < o.amountToken) {
+        // v4.1: your own open offers on this token must stay backed after the fill, or the contract refuses it.
+        const mine = await contract.committed(userAddress, o.token).catch(() => 0n);
+        const needTok = o.amountToken + mine;
+        if (tokenBal !== null && tokenBal < needTok) {
           const meta = await getTokenMeta(o.token);
-          statusEl.textContent = `You only hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}, but filling this offer needs ${ethers.formatUnits(o.amountToken, decimals)} ${meta.symbol}.`;
+          statusEl.textContent = mine > 0n
+            ? `Filling this needs ${ethers.formatUnits(o.amountToken, decimals)} ${meta.symbol}, and your own open offers promise ${ethers.formatUnits(mine, decimals)} more. You hold ${ethers.formatUnits(tokenBal, decimals)}. Top up, or cancel one of your offers first.`
+            : `You only hold ${ethers.formatUnits(tokenBal, decimals)} ${meta.symbol}, but filling this offer needs ${ethers.formatUnits(o.amountToken, decimals)} ${meta.symbol}.`;
           statusEl.className = "status-msg error";
           btn.disabled = false;
           return;
         }
         statusEl.textContent = "Approving token spend…";
         const allowance = await token.allowance(userAddress, CONTRACT_ADDRESS);
-        if (allowance < o.amountToken) {
-          const approveTx = await token.approve(CONTRACT_ADDRESS, o.amountToken);
+        if (allowance < needTok) {
+          const approveTx = await token.approve(CONTRACT_ADDRESS, needTok);
           await approveTx.wait();
         }
         statusEl.textContent = "Filling offer…";
@@ -2223,6 +2241,7 @@ details to be added here before this is used for real.]
       refreshStats();
       loadOffers();
       loadTradeHistory();
+      if (document.getElementById("sharedOffer")?.style.display !== "none") showSharedOffer(); // refresh the shared card's status
     } catch (err) {
       statusEl.textContent = friendlyError(err);
       statusEl.className = "status-msg error";
