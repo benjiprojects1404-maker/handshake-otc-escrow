@@ -2241,6 +2241,7 @@ details to be added here before this is used for real.]
       refreshStats();
       loadOffers();
       loadTradeHistory();
+      if (document.getElementById("sharedOffer")?.style.display !== "none") showSharedOffer(); // refresh the shared card's status
     } catch (err) {
       statusEl.textContent = friendlyError(err);
       statusEl.className = "status-msg error";
