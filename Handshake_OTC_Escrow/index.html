@@ -271,6 +271,26 @@
     margin: 0;
   }
   .hero h1 em { font-style: normal; color: var(--accent); }
+  /* Ticker: every Reef pool's BDAG price and 24h change (reefdex.fyi/api/v1/tickers): a price check for makers. */
+  .tk { margin: 0 0 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 0 12px 16px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 14px; position: relative; overflow: hidden; }
+  .tk[hidden] { display: none; }
+  .tk::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, var(--line-strong) 1px, transparent 1.2px) 0 0/14px 14px; opacity: .5; pointer-events: none; }
+  .tk .lead { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .tk .lead b { font-weight: 700; font-size: 15px; color: var(--ink); white-space: nowrap; }
+  .tk .lead span { font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; }
+  .tk .rail { position: relative; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 40px), transparent); }
+  .tk .rail::-webkit-scrollbar { display: none; }
+  .tk .track { display: flex; gap: 8px; width: max-content; padding: 2px 24px 2px 8px; }
+  .tk .tc { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface-raised); color: var(--ink); text-decoration: none; white-space: nowrap; font-size: 13px; cursor: pointer; font-family: inherit; transition: border-color .15s, transform .15s; }
+  .tk .tc:hover, .tk .tc:focus-visible { border-color: var(--get); transform: translateY(-1px); outline: none; }
+  .tk .td { width: 26px; height: 26px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 800; font-size: 11px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+  .tk .ts { font-weight: 600; }
+  .tk .tp { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+  .tk .tp sub { font-size: .75em; }
+  .tk .tg { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tk .tg.up { color: var(--dot-ok); } .tk .tg.down { color: var(--give); } .tk .tg.flat { color: var(--ink-faint); }
+  .tk .tn { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 6px; border-radius: 999px; background: var(--get-dim); color: var(--get); }
+  @media (max-width: 640px) { .tk { grid-template-columns: minmax(0,1fr); gap: 10px; padding: 12px 0; } .tk .lead { flex-direction: row; align-items: baseline; gap: 8px; padding: 0 16px; } }
   .hero p {
     color: var(--ink-dim);
     font-size: 15.5px;
@@ -653,6 +673,11 @@
     </div>
   </div>
 
+  <section class="tk" id="ticker" aria-label="Reef pools: price in BDAG and 24-hour change" hidden>
+    <div class="lead"><b>Price check</b><span>Reef pools · BDAG · 24h · tap to make an offer</span></div>
+    <div class="rail" id="tkRail"><div class="track" id="tkTrack"></div></div>
+  </section>
+
   <div class="panel" style="margin-bottom:20px;">
     <h3 style="margin-bottom:12px;">What Handshake does</h3>
     <p style="color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0 0 18px; max-width: none;">
@@ -930,6 +955,75 @@
   </footer>
 </div>
 
+<script>
+// Ticker: reefdex.fyi/api/v1/tickers (each pool's price now and 24h ago from its own events; no price feed).
+// Tapping a chip puts that token into the New offer form. Own script, so it works even if the wallet code doesn't load.
+(function () {
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const big = (v) => (v >= 1e6 ? (v / 1e6).toFixed(v >= 1e8 ? 0 : 2).replace(/\.?0+$/, "") + "M" : (v / 1e3).toFixed(v >= 1e5 ? 0 : 2).replace(/\.?0+$/, "") + "K");
+  function price(v) {
+    if (!(v > 0) || !isFinite(v)) return "–";
+    if (v >= 1000) return big(v);
+    if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: v >= 100 ? 1 : 3 });
+    const z = Math.floor(-Math.log10(v)), d = Math.round(v * 10 ** (z + 3)).toString().slice(0, 3).replace(/0+$/, "") || "0";
+    return z >= 4 ? `0.0<sub>${z}</sub>${d}` : "0." + "0".repeat(z) + d;
+  }
+  function chip(t, hidden) {
+    const h = parseInt(String(t.token).slice(2, 8), 16) % 360, c = t.change24hPct;
+    const cls = c === null ? "flat" : c > 0.05 ? "up" : c < -0.05 ? "down" : "flat";
+    const chg = c === null ? "–" : (cls === "up" ? "▲ " : cls === "down" ? "▼ " : "") + Math.abs(c).toFixed(Math.abs(c) >= 100 ? 0 : 2) + "%";
+    return `<button type="button" class="tc" data-addr="${esc(t.token)}"${hidden ? ' aria-hidden="true" tabindex="-1"' : ""} title="${esc(t.name || t.symbol)}: ${esc(price(t.priceBDAG)).replace(/<[^>]+>/g, "")} BDAG on Reef. Tap to make an offer">`
+      + `<span class="td" style="background:radial-gradient(circle at 50% 22%,hsl(${h} 85% 85%),hsl(${h} 62% 48%) 62%,hsl(${h} 70% 16%))">${esc((t.symbol || "?").slice(0, 1))}</span>`
+      + `<span class="ts">${esc(t.symbol)}</span>${t.newPool ? '<span class="tn">NEW</span>' : ""}<span class="tp">${price(t.priceBDAG)}</span><span class="tg ${cls}">${chg}</span></button>`;
+  }
+  let rail, track, hold = 0, started = false, tries = 0;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function start() {
+    if (started || still) return; started = true;
+    let last = performance.now(), acc = 0;
+    const step = (now) => {
+      const dt = Math.min(64, now - last); last = now;
+      if (Date.now() > hold && !document.hidden) {
+        acc += dt * 0.035; const px = Math.floor(acc); acc -= px;
+        if (px) { rail.scrollLeft += px; const half = rail.scrollWidth / 2; if (rail.scrollLeft >= half) rail.scrollLeft -= half; }
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    const set = (ms) => () => { hold = Date.now() + ms; };
+    [["mouseenter", 1e9], ["mouseleave", 0], ["focusin", 1e9], ["focusout", 1500], ["touchstart", 1e9], ["touchend", 4000], ["wheel", 4000]]
+      .forEach(([e, ms]) => rail.addEventListener(e, set(ms), { passive: true }));
+  }
+  async function load() {
+    try {
+      const r = await fetch("https://reefdex.fyi/api/v1/tickers", { signal: AbortSignal.timeout(15000) });
+      const d = r.ok ? await r.json() : null;
+      const list = (d && Array.isArray(d.tickers) ? d.tickers : []).filter((t) => t.priceBDAG > 0)
+        .sort((a, b) => (Number(b.volume24hBDAG) - Number(a.volume24hBDAG)) || (Number(b.liquidityBDAG) - Number(a.liquidityBDAG)));
+      if (!list.length) throw new Error("no data");
+      const keep = rail.scrollLeft;
+      track.innerHTML = list.map((t) => chip(t)).join("") + (still ? "" : list.map((t) => chip(t, true)).join(""));
+      rail.scrollLeft = keep;
+      document.getElementById("ticker").hidden = false;
+      start(); tries = 0;
+    } catch (e) {
+      if (document.getElementById("ticker").hidden && ++tries <= 3) setTimeout(load, 5000 * tries);
+    }
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    rail = document.getElementById("tkRail"); track = document.getElementById("tkTrack");
+    if (!rail) return;
+    track.addEventListener("click", (e) => {
+      const b = e.target.closest(".tc"); if (!b) return;
+      const inp = document.getElementById("tokenAddrInput"); if (!inp) return;
+      inp.value = b.dataset.addr;
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      inp.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    load(); setInterval(load, 60000);
+  });
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
 <script>
   // ---------------------------------------------------------------------
