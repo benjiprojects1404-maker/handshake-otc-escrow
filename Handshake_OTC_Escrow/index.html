@@ -298,30 +298,6 @@
     max-width: 820px;
     margin: 14px 0 0;
   }
-  .hero-tickertape {
-    max-width: 100%;
-    margin-top: 26px;
-    overflow: hidden;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    padding: 9px 0;
-  }
-  .hero-tickertape .track {
-    display: flex;
-    gap: 34px;
-    white-space: nowrap;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    color: var(--ink-faint);
-    animation: ticker 16s linear infinite;
-    width: max-content;
-  }
-  .hero-tickertape .track span.on { color: var(--get); }
-  @keyframes ticker {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
 
 
   .btn {
@@ -664,12 +640,6 @@
       <div class="hero-eyebrow">PEER-TO-PEER · YOUR FUNDS STAY IN YOUR WALLET</div>
       <h1>Trade hand to hand,<br><em>not order to order.</em></h1>
       <p>Name your price for BDAG or a token and let anyone — or one specific address — fill it. Nothing is deposited: your side stays in your wallet until someone fills, then both sides move in one transaction or not at all. Cancel anytime.</p>
-      <div class="hero-tickertape">
-        <div class="track">
-          <span class="on">APPROVE</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
-          <span class="on">APPROVE</span><span>→</span><span>LIST</span><span>→</span><span class="on">FILL</span><span>→</span><span>SETTLE</span><span>→</span>
-        </div>
-      </div>
     </div>
   </div>
 
