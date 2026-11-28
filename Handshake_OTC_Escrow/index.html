@@ -2451,5 +2451,30 @@ details to be added here before this is used for real.]
   };
 })();
 </script>
+<script>
+// Pre-filled offers (Nov 2026): reefdex.fyi's Limit tab sends people here to sign their limit order as a Handshake
+// offer. Link: #new&t=<token>&g=bdag|token&b=<BDAG amount>&a=<token amount>. Only fills the form: nothing is signed
+// or sent until the person presses Create offer, and every field can still be changed.
+(function () {
+  const raw = location.hash.slice(1);
+  if (!/^new(&|$)/.test(raw)) return;
+  const q = new URLSearchParams(raw.replace(/^new&?/, ""));
+  const t = (q.get("t") || "").trim(), g = q.get("g"), b = q.get("b") || "", a = q.get("a") || "";
+  const num = (v) => /^\d{1,30}(\.\d{1,18})?$/.test(v) ? v : "";
+  const set = (id, v) => { const el = document.getElementById(id); if (!el || !v) return; el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); };
+  const fill = () => {
+    if (g === "token") document.getElementById("dirGiveToken")?.click(); else document.getElementById("dirGiveNative")?.click();
+    if (/^0x[0-9a-fA-F]{40}$/.test(t)) set("tokenAddrInput", t);
+    set("amountNativeInput", num(b));
+    set("amountTokenInput", num(a));
+    history.replaceState(null, "", location.pathname + location.search + "#trade");
+    const form = document.getElementById("createBtn")?.closest(".panel");
+    if (form) setTimeout(() => form.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+    const st = document.getElementById("createStatus");
+    if (st) { st.textContent = "Filled in from your Reef limit order. Check the amounts, then press Create offer."; st.className = "status-msg"; }
+  };
+  if (document.readyState === "complete") setTimeout(fill, 400); else window.addEventListener("load", () => setTimeout(fill, 400));
+})();
+</script>
 </body>
 </html>
