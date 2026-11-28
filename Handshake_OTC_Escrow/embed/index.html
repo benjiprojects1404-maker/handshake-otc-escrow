@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Handshake OTC Widget</title>
 <link rel="canonical" href="https://handshakeotc.fyi/embed/">
@@ -10,6 +10,9 @@
 <style>
 :root{--bg:#0b1a1e;--surface:#0e1f24;--raised:#12262c;--line:rgba(150,210,225,.14);--ink:#e7f3f5;--dim:rgba(231,243,245,.68);--faint:rgba(231,243,245,.46);--accent:#d6dde3;--give:#ff8b6a;--get:#37d3f4}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f5fcfd;--surface:#ffffff;--raised:#eef7f9;--line:rgba(6,40,46,.14);--ink:#0b1f24;--dim:rgba(11,31,36,.72);--faint:rgba(11,31,36,.52);--accent:#44525b;--give:#c2410c;--get:#087f9e}}
+/* theme switch: light by choice */
+:root[data-theme="light"]{--bg:#f5fcfd;--surface:#ffffff;--raised:#eef7f9;--line:rgba(6,40,46,.14);--ink:#0b1f24;--dim:rgba(11,31,36,.72);--faint:rgba(11,31,36,.52);--accent:#44525b;--give:#c2410c;--get:#087f9e}
+
 :root[data-theme="light"]{--bg:#f5fcfd;--surface:#ffffff;--raised:#eef7f9;--line:rgba(6,40,46,.14);--ink:#0b1f24;--dim:rgba(11,31,36,.72);--faint:rgba(11,31,36,.52);--accent:#44525b;--give:#c2410c;--get:#087f9e}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}

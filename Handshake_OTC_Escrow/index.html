@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>
   // Old hosting address -> own domain (keeps the same path). Only fires on the exact old host,
   // so the real domain and preview deployments are unaffected.
@@ -76,8 +76,38 @@
       --dot-bad: #c92f2f;
     }
   }
+/* theme switch: light by choice */
+:root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #e6f4f6;
+      --surface: #f5fcfd;
+      --surface-raised: #eaf6f8;
+      --line: rgba(6,40,46,0.14);
+      --line-strong: rgba(6,40,46,0.22);
+      --ink: #0b1f24;
+      --accent: #44525b;
+      --accent-dim: rgba(68,82,91,0.12);
+      --on-accent: #ffffff;
+      --ink-dim: rgba(11,31,36,0.72);
+      --ink-faint: rgba(11,31,36,0.52);
+      --give: #c94a28;
+      --give-dim: rgba(201,74,40,0.12);
+      --get: #087f9e;
+      --get-dim: rgba(8,127,158,0.12);
+      --private: #44525b;
+      --private-dim: rgba(68,82,91,0.12);
+      --danger: #c92f2f;
+      --danger-dim: rgba(201,47,47,0.10);
+      --dot-ok: #1a9b5f;
+      --dot-warn: #c98a0a;
+      --dot-bad: #c92f2f;
+    }
+
   :root { color-scheme: dark; }
   @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { color-scheme: light; } }
+/* theme switch: light by choice */
+:root[data-theme="light"] { color-scheme: light; }
+
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -646,7 +676,15 @@
   .views .hero .hero-eyebrow { margin-bottom: 10px; }
   .views .hero h1 { font-size: 26px !important; line-height: 1.2; letter-spacing: -0.01em; }
   .views .hero p { font-size: 15px !important; line-height: 1.6; margin-top: 10px; max-width: 760px; }
-</style>
+
+/* Light / dark switch (28 Nov 2026). The choice is saved; with no choice the phone or computer setting decides. */
+.themebtn{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--ink-dim);cursor:pointer;padding:0}
+.themebtn:hover{color:var(--ink);border-color:var(--get)}
+.themebtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  @media (max-width:760px){ .apphead .themebtn{width:32px;height:32px} }
+  @media (max-width:420px){ header.apphead { gap:4px; padding-left:12px; padding-right:12px; } .apphead .themebtn{width:30px;height:30px} }
+  @media (max-width:385px){ .hbrandbtn .name-text { display:none; } }
+  </style>
 </head>
 <body>
 <div id="tosGateOverlay" class="tos-gate-overlay" style="display:none;">
@@ -690,6 +728,7 @@
       <span class="dot off" id="statusDot"></span>
       <span id="statusText">not connected</span>
     </div>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch theme"></button>
     <button id="connectBtn">Connect wallet</button>
   </header>
 
@@ -2474,6 +2513,32 @@ details to be added here before this is used for real.]
     if (st) { st.textContent = "Filled in from your Reef limit order. Check the amounts, then press Create offer."; st.className = "status-msg"; }
   };
   if (document.readyState === "complete") setTimeout(fill, 400); else window.addEventListener("load", () => setTimeout(fill, 400));
+})();
+</script>
+<script>
+/* Light / dark switch */
+(function () {
+  var root = document.documentElement, btn = document.getElementById("themeBtn");
+  if (!btn) return;
+  var mq = matchMedia("(prefers-color-scheme: light)");
+  var SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>';
+  function now() { return root.dataset.theme || (mq.matches ? "light" : "dark"); }
+  function paint() {
+    var light = now() === "light";
+    btn.innerHTML = light ? MOON : SUN;
+    btn.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode");
+    btn.title = light ? "Dark mode" : "Light mode";
+    
+  }
+  btn.addEventListener("click", function () {
+    var next = now() === "light" ? "dark" : "light";
+    root.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    paint();
+  });
+  if (mq.addEventListener) mq.addEventListener("change", paint);
+  paint();
 })();
 </script>
 </body>
