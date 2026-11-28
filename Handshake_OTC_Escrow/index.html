@@ -585,6 +585,61 @@
 #tosCancelBtn { border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #8b93a7; }
 #tosAgreeBtn { flex-grow: 2; border: none; background: linear-gradient(90deg, var(--give), var(--get)); color: #08110a; }
 #tosAgreeBtn:disabled { background: #2a3245; color: #6b7280; cursor: default; }
+
+  /* ---- App layout (Nov 2026, like Reef): header with logo menu + tabs, one view at a time, bottom nav on phones ---- */
+  header.apphead { display:flex; align-items:center; justify-content:flex-start; gap:12px; margin:0 -24px 20px; padding:12px 24px; position:sticky; top:0; z-index:50;
+    background: color-mix(in srgb, var(--bg) 84%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom:1px solid var(--line); flex-wrap:nowrap; }
+  .wrap { padding-top: 0 !important; }
+  .hbrand { position:relative; flex:none; }
+  .hbrandbtn { display:flex; align-items:center; gap:10px; background:none; border:0; padding:2px 4px 2px 0; cursor:pointer; color:var(--ink); font:inherit; }
+  .hbrandbtn .mark { width:34px; height:34px; border-radius:8px; background:linear-gradient(135deg, var(--give), var(--private), var(--get)); display:flex; align-items:center; justify-content:center; color:#06131a; font-weight:700; font-size:17px; }
+  .hbrandbtn .name-text { font: 700 21px/1 'Instrument Sans', sans-serif; letter-spacing:-.01em; background: linear-gradient(90deg, var(--give), var(--get)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hbrandbtn .chev { width:15px; height:15px; fill:none; stroke:var(--ink-dim); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s; }
+  .hbrandbtn[aria-expanded="true"] .chev { transform:rotate(180deg); }
+  .appmenu { position:absolute; top:calc(100% + 12px); left:0; width:270px; max-height:calc(100vh - 90px); overflow:auto; background:var(--surface); border:1px solid var(--line-strong); border-radius:14px; padding:8px; box-shadow:0 24px 48px -16px rgba(0,0,0,.55); z-index:60; }
+  .appmenu[hidden] { display:none; }
+  .appmenu .mgrp { padding:4px 2px 8px; border-bottom:1px solid var(--line); }
+  .appmenu .mgrp b { display:block; font: 600 10.5px/1 'JetBrains Mono', monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); padding:10px 10px 6px; }
+  .appmenu .mgrp a { display:block; padding:8px 10px; border-radius:8px; font-size:14px; color:var(--ink); text-decoration:none; }
+  .appmenu .mgrp a:hover { background: color-mix(in srgb, var(--get) 10%, transparent); }
+  .appmenu .msoc { display:flex; gap:8px; padding:10px 10px 4px; }
+  .appmenu .msoc a { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; border:1px solid var(--line-strong); color:var(--ink-dim); }
+  .appmenu .msoc a:hover { color:var(--get); border-color:var(--get); }
+  .appmenu .msoc svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .betapill { flex:none; font: 700 10px/1 'JetBrains Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--give); border:1px solid color-mix(in srgb, var(--give) 45%, transparent); border-radius:999px; padding:4px 8px; }
+  .vtabs { display:flex; gap:4px; padding:4px; border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-left:6px; }
+  .vtabs a { padding:8px 16px; border-radius:8px; font-size:14px; font-weight:600; color:var(--ink-dim); text-decoration:none; }
+  .vtabs a:hover { color:var(--ink); }
+  .vtabs a.on { background: color-mix(in srgb, var(--get) 16%, transparent); color:var(--ink); }
+  .hspacer { flex:1; }
+  .views .view { display:none; }
+  body[data-view="trade"] .view[data-view="trade"], body[data-view="market"] .view[data-view="market"], body[data-view="about"] .view[data-view="about"] { display:block; }
+  .views .hero { padding-top: 6px; }
+  .views .beta-banner { margin-bottom: 20px; }
+  .bottomnav { display:none; }
+  dialog.walletdlg { width:min(420px, 92vw); padding:22px 22px 18px; border:1px solid var(--line-strong); border-radius:16px; background:var(--surface); color:var(--ink); }
+  dialog.walletdlg::backdrop { background: rgba(4,8,16,.55); backdrop-filter: blur(3px); }
+  dialog.walletdlg h3 { margin:0 0 10px; font-size:18px; }
+  dialog.walletdlg p { margin:0 0 12px; font-size:14px; line-height:1.55; color:var(--ink-dim); }
+  dialog.walletdlg .dclose { position:absolute; top:10px; right:12px; background:none; border:0; color:var(--ink-dim); font-size:24px; cursor:pointer; }
+  dialog.walletdlg .wbtns { display:grid; gap:8px; margin:0 0 12px; }
+  dialog.walletdlg .wbtns a { display:block; text-align:center; padding:12px; border-radius:10px; background: linear-gradient(90deg, var(--give), var(--get)); color:#06131a; font-weight:700; text-decoration:none; }
+  @media (max-width: 860px) { header.apphead { flex-wrap:nowrap; row-gap:0; } }
+  @media (max-width: 760px) {
+    header.apphead { margin:0 -16px 16px; padding:10px 16px; gap:8px; }
+    .wrap { padding-left:16px !important; padding-right:16px !important; padding-bottom:96px !important; }
+    .vtabs, .betapill, header.apphead .hide-sm { display:none !important; }
+    .hbrandbtn .mark { width:30px; height:30px; }
+    .hbrandbtn .name-text { font-size:18px; }
+    #connectBtn { padding:8px 11px; font: 600 13px 'Instrument Sans', sans-serif; }
+    header.apphead .rpcbtn { padding:6px 8px; gap:5px; }
+    .hbrandbtn { gap:8px; }
+    .appmenu { position:fixed; top:58px; left:12px; right:12px; width:auto; }
+    .bottomnav { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:40; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top:1px solid var(--line); padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+    .bottomnav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0; color:var(--ink-faint); text-decoration:none; font-size:12px; font-weight:600; }
+    .bottomnav a.on { color:var(--get); }
+    .bottomnav svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  }
 </style>
 </head>
 <body>
@@ -607,118 +662,42 @@
 </div>
 <div class="wrap">
 
-  <header>
-    <div class="brand">
-      <div class="mark">⇄</div>
-      <div>
-        <div class="name"><span class="name-text">Handshake</span><span class="name-sub">PEER-TO-PEER OTC</span></div>
-        <div class="chain-badge"><span class="pulse-dot"></span>ON CHAIN 1404</div>
+  <header class="apphead">
+    <div class="hbrand">
+      <button type="button" class="hbrandbtn" id="brandBtn" aria-expanded="false" aria-haspopup="menu" aria-controls="appMenu" aria-label="Handshake menu">
+        <span class="mark">⇄</span><span class="name-text">Handshake</span>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="appmenu" id="appMenu" role="menu" hidden>
+        <div class="mgrp"><b>Resources</b><a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener">Security review</a><a href="/overview.pdf" target="_blank" rel="noopener">Overview brief (PDF)</a><a href="/embed/">Embed widget for your site</a><a href="mailto:security@handshakeotc.fyi">Report a vulnerability</a></div>
+        <div class="mgrp"><b>Older offers</b><a href="/v4/">v4 offers</a><a href="/v3/">v3 offers</a></div>
+        <div class="mgrp"><b>Learn</b><a href="#about">What Handshake does</a><a href="#security">Security &amp; trust</a><a href="#faq">FAQ</a></div>
+        <div class="mgrp"><b>Also on BlockDAG</b><a href="https://reefdex.fyi" target="_blank" rel="noopener">Reef DEX</a><a href="https://www.nodaldex.fyi" target="_blank" rel="noopener">Nodal</a><a href="https://cookedmeme.fyi" target="_blank" rel="noopener">The Kitchen</a></div>
+        <div class="msoc"><a href="https://x.com/benji107" target="_blank" rel="noopener" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20"/></svg></a><a href="https://t.me/undercurrentworks" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 4-18 7 6 2 2 6 3-4 5 4 2-15Z"/></svg></a><a href="https://github.com/benjiprojects1404-maker/handshake-otc-escrow" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4 1.5-4-2-6-2.5m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></div>
       </div>
     </div>
-    <div class="header-right">
-      <button type="button" class="rpcbtn" id="rpcBadge" aria-haspopup="dialog" aria-controls="rpcDialog"><span class="rpcdot"></span>RPC status</button>
-      <div class="wallet-status">
-        <span class="dot off" id="statusDot"></span>
-        <span id="statusText">not connected</span>
-      </div>
-      <button id="connectBtn">Connect wallet</button>
+    <span class="betapill">Beta</span>
+    <nav class="vtabs" aria-label="Sections"><a data-v="trade" href="#trade">Trade</a><a data-v="market" href="#market">Market</a><a data-v="about" href="#about">About</a></nav>
+    <span class="hspacer"></span>
+    <button type="button" class="rpcbtn" id="rpcBadge" aria-haspopup="dialog" aria-controls="rpcDialog" aria-label="RPC status"><span class="rpcdot"></span>RPC</button>
+    <div class="wallet-status hide-sm">
+      <span class="dot off" id="statusDot"></span>
+      <span id="statusText">not connected</span>
     </div>
+    <button id="connectBtn">Connect wallet</button>
   </header>
-
-  <div class="beta-banner">
-    <span class="beta-banner-tag">BETA</span>
-    Experimental software on an early-stage chain. Source is published but not independently audited — start with small amounts. <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer">AI-assisted security review</a> · <a href="#faq-audit" onclick="var d=document.getElementById('faq-audit'); d.open=true; d.scrollIntoView({behavior:'smooth'}); return false;">Read more</a>
-  </div>
 
   <div class="beta-banner" id="pausedBanner" style="display:none;">
     <span class="beta-banner-tag">PAUSED</span>
     Handshake is paused by the contract owner: new offers and fills are on hold. Your funds are in your own wallet, and you can still cancel your offers.
   </div>
 
-  <div class="hero">
-    <div>
-      <div class="hero-eyebrow">PEER-TO-PEER · YOUR FUNDS STAY IN YOUR WALLET</div>
-      <h1>Trade hand to hand,<br><em>not order to order.</em></h1>
-      <p>Name your price for BDAG or a token and let anyone — or one specific address — fill it. Nothing is deposited: your side stays in your wallet until someone fills, then both sides move in one transaction or not at all. Cancel anytime.</p>
-    </div>
-  </div>
-
+  <main class="views">
+  <div class="view" data-view="trade">
   <section class="tk" id="ticker" aria-label="Reef pools: price in BDAG and 24-hour change" hidden>
     <div class="lead"><b>Price check</b><span>Reef pools · BDAG · 24h · tap to make an offer</span></div>
     <div class="rail" id="tkRail"><div class="track" id="tkTrack"></div></div>
   </section>
-
-  <div class="panel" style="margin-bottom:20px;">
-    <h3 style="margin-bottom:12px;">What Handshake does</h3>
-    <p style="color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0 0 18px; max-width: none;">
-      Handshake is a peer-to-peer OTC contract on chain 1404 that never holds your funds. When you post an offer,
-      the contract records only its terms; your <span style="color:var(--give)">BDAG</span> or
-      <span style="color:var(--get)">ERC-20 token</span> stays in your own wallet, covered by an ordinary approval.
-      When a counterparty fills, both assets move wallet to wallet in one atomic transaction — either the full trade
-      settles, or nothing moves at all. There's no pooled liquidity, no order book matching engine, and nobody,
-      including the contract and us, ever holds your funds in between.
-    </p>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
-      <div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">TWO-WAY OFFERS</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Give BDAG for a token, or give a token for BDAG — either direction, same contract.</div>
-      </div>
-      <div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">PRIVATE OR OPEN</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Restrict a deal to one specific wallet, or leave it open for anyone to fill.</div>
-      </div>
-      <div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">CANCEL ANYTIME</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Makers can cancel an open offer at any time. Nothing was deposited, so there's nothing to wait for.</div>
-      </div>
-      <div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">LIVE MARKET DATA</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">The per-offer limit, total offers, protocol fee, and your wallet/network status at a glance, all read from the chain.</div>
-      </div>
-      <div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">ON-CHAIN HISTORY</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Recent fills are read straight from contract events — nothing cached, nothing off-chain.</div>
-      </div>
-      <div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">ANY ERC-20 PAIR</div>
-        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Not limited to one token — trade BDAG against any ERC-20 contract on chain 1404. Nothing is vetted, so verify a token yourself before trusting it.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="stat-bar">
-    <div class="stat-cell">
-      <div class="label">bdag limit / offer</div>
-
-      <div class="value" id="statLimit">—</div>
-    </div>
-    <div class="stat-cell">
-      <div class="label">total offers</div>
-      <div class="value" id="statTotal">—</div>
-    </div>
-    <div class="stat-cell">
-      <div class="label">protocol fee</div>
-      <div class="value" id="statFee">—</div>
-    </div>
-    <div class="stat-cell">
-      <div class="label">wallet</div>
-      <div class="value dim" id="statWallet">not connected</div>
-    </div>
-    <div class="stat-cell">
-      <div class="label">network</div>
-      <div class="value dim" id="statNetwork">—</div>
-    </div>
-  </div>
-
-  <div class="panel chart-panel">
-    <div class="top-row">
-      <h3 style="margin:0;">Recent fills</h3>
-      <span class="vol-total" id="chartVolTotal"></span>
-    </div>
-    <div class="chart-bars" id="chartBars">
-      <div class="gallery-empty" style="width:100%;">Connect your wallet to see trade history.</div>
-    </div>
-  </div>
 
   <div class="grid-2">
     <div class="panel">
@@ -788,6 +767,95 @@
       <button class="btn btn-outline btn-sm" id="loadMoreBtn" style="display:none;margin-top:12px;">Load more</button>
     </div>
   </div>
+  </div>
+
+  <div class="view" data-view="market">
+  <div class="stat-bar">
+    <div class="stat-cell">
+      <div class="label">bdag limit / offer</div>
+
+      <div class="value" id="statLimit">—</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">total offers</div>
+      <div class="value" id="statTotal">—</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">protocol fee</div>
+      <div class="value" id="statFee">—</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">wallet</div>
+      <div class="value dim" id="statWallet">not connected</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">network</div>
+      <div class="value dim" id="statNetwork">—</div>
+    </div>
+  </div>
+
+  <div class="panel chart-panel">
+    <div class="top-row">
+      <h3 style="margin:0;">Recent fills</h3>
+      <span class="vol-total" id="chartVolTotal"></span>
+    </div>
+    <div class="chart-bars" id="chartBars">
+      <div class="gallery-empty" style="width:100%;">Connect your wallet to see trade history.</div>
+    </div>
+  </div>
+  </div>
+
+  <div class="view" data-view="about">
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">PEER-TO-PEER · YOUR FUNDS STAY IN YOUR WALLET</div>
+      <h1>Trade hand to hand,<br><em>not order to order.</em></h1>
+      <p>Name your price for BDAG or a token and let anyone — or one specific address — fill it. Nothing is deposited: your side stays in your wallet until someone fills, then both sides move in one transaction or not at all. Cancel anytime.</p>
+    </div>
+  </div>
+
+  <div class="beta-banner" id="risks">
+    <span class="beta-banner-tag">BETA</span>
+    Experimental software on an early-stage chain. Source is published but not independently audited — start with small amounts. <a href="https://benjiprojects1404-services.pages.dev/security-review/" target="_blank" rel="noopener noreferrer">AI-assisted security review</a> · <a href="#faq-audit" onclick="var d=document.getElementById('faq-audit'); d.open=true; d.scrollIntoView({behavior:'smooth'}); return false;">Read more</a>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <h3 style="margin-bottom:12px;">What Handshake does</h3>
+    <p style="color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0 0 18px; max-width: none;">
+      Handshake is a peer-to-peer OTC contract on chain 1404 that never holds your funds. When you post an offer,
+      the contract records only its terms; your <span style="color:var(--give)">BDAG</span> or
+      <span style="color:var(--get)">ERC-20 token</span> stays in your own wallet, covered by an ordinary approval.
+      When a counterparty fills, both assets move wallet to wallet in one atomic transaction — either the full trade
+      settles, or nothing moves at all. There's no pooled liquidity, no order book matching engine, and nobody,
+      including the contract and us, ever holds your funds in between.
+    </p>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">TWO-WAY OFFERS</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Give BDAG for a token, or give a token for BDAG — either direction, same contract.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">PRIVATE OR OPEN</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Restrict a deal to one specific wallet, or leave it open for anyone to fill.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">CANCEL ANYTIME</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Makers can cancel an open offer at any time. Nothing was deposited, so there's nothing to wait for.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--give); margin-bottom:4px;">LIVE MARKET DATA</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">The per-offer limit, total offers, protocol fee, and your wallet/network status at a glance, all read from the chain.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--private); margin-bottom:4px;">ON-CHAIN HISTORY</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Recent fills are read straight from contract events — nothing cached, nothing off-chain.</div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1px; color:var(--get); margin-bottom:4px;">ANY ERC-20 PAIR</div>
+        <div style="font-size:12.5px; color:var(--ink-faint); line-height:1.55;">Not limited to one token — trade BDAG against any ERC-20 contract on chain 1404. Nothing is vetted, so verify a token yourself before trusting it.</div>
+      </div>
+    </div>
+  </div>
 
   <div class="panel" style="margin-bottom:20px;" id="security">
     <h3>Security &amp; trust</h3>
@@ -829,7 +897,7 @@
     </details>
   </div>
 
-  <div class="panel" style="margin-bottom:20px;">
+  <div class="panel" style="margin-bottom:20px;" id="faq">
     <h3>FAQ</h3>
     <details class="qa">
       <summary>Does this only work if both sides use the same currency?</summary>
@@ -896,6 +964,8 @@
       </div>
     </details>
   </div>
+  </div>
+  </main>
 
   <dialog id="rpcDialog" class="rpc-dialog" aria-labelledby="rpcDialogTitle">
   <div class="panel" style="margin-bottom:20px;">
@@ -924,6 +994,12 @@
     handshake · peer-to-peer otc · your funds stay in your wallet · beta software, not independently audited · <a data-contract-link href="#" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline;">verify contract source</a> before trading · <a href="#security" style="color:inherit; text-decoration:underline;">security</a> · <a href="/v3/" style="color:inherit; text-decoration:underline;">older offers (v3)</a> · <a href="/overview.pdf" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">overview brief (PDF)</a> · built by <a href="https://benjiprojects1404-services.pages.dev" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">Undercurrent Works</a> · not financial advice · <a href="/embed/" style="color:inherit; text-decoration:underline;">embed widget for your site</a>
   </footer>
 </div>
+<nav class="bottomnav" aria-label="Sections"><a data-v="trade" href="#trade"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/></svg><span>Trade</span></a><a data-v="market" href="#market"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19v-5M10 19V9M15 19v-7M20 19V5"/></svg><span>Market</span></a><a data-v="about" href="#about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><span>About</span></a></nav>
+<dialog class="walletdlg" id="walletDialog" aria-labelledby="walletDlgTitle">
+  <button type="button" class="dclose" id="walletDlgClose" aria-label="Close">&times;</button>
+  <h3 id="walletDlgTitle">Wallet</h3>
+  <div id="walletDlgBody"></div>
+</dialog>
 
 <script>
 // Ticker: reefdex.fyi/api/v1/tickers (each pool's price now and 24h ago from its own events; no price feed).
@@ -1338,9 +1414,15 @@ details to be added here before this is used for real.]
   });
 
   async function doConnectWallet() {
-    if (!window.ethereum) { alert("No wallet found. Install MetaMask or a similar browser wallet."); return; }
+    if (!window.ethereum) { walletNoWallet(); return; }
     provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
+    try { await provider.send("eth_requestAccounts", []); }
+    catch (e) {
+      const c = e?.code ?? e?.error?.code ?? e?.info?.error?.code;
+      if (c === 4001 || c === "ACTION_REJECTED") return; // cancelled in the wallet: stay quiet
+      walletNotice("Wallet", c === -32002 ? "A connection request is already waiting in your wallet. Open your wallet and approve it there." : "The wallet didn't connect: " + (e?.shortMessage || e?.message || "unknown error") + ". Please try again.");
+      return;
+    }
     await ensureCorrectNetwork();
     provider = new ethers.BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
@@ -2312,6 +2394,56 @@ details to be added here before this is used for real.]
       btn.disabled = false;
     }
   }
+</script>
+<script>
+// Views (Nov 2026): #trade (default), #market, #about. Anchors inside a view (#faq, #security, #risks) open that view;
+// shared-offer links (#offer=…, #c=4.1&offer=…) stay on Trade.
+(function () {
+  const VIEWS = ["trade", "market", "about"];
+  const IN = { faq: "about", security: "about", risks: "about", "faq-audit": "about" };
+  function viewFor(h) {
+    if (VIEWS.includes(h)) return h;
+    if (IN[h]) return IN[h];
+    return "trade";
+  }
+  let first = true;
+  function route() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    const v = viewFor(h);
+    document.body.dataset.view = v;
+    document.querySelectorAll("[data-v]").forEach((a) => { const on = a.dataset.v === v; a.classList.toggle("on", on); if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    const el = IN[h] && document.getElementById(h);
+    if (el) { if (el.tagName === "DETAILS") el.open = true; setTimeout(() => el.scrollIntoView({ block: "start" }), 0); }
+    else if (VIEWS.includes(h) && !first) window.scrollTo({ top: 0, behavior: "instant" });
+    first = false;
+    closeMenu();
+  }
+  const btn = document.getElementById("brandBtn"), menu = document.getElementById("appMenu");
+  function closeMenu() { if (menu && !menu.hidden) { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); } }
+  btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute("aria-expanded", menu.hidden ? "false" : "true"); });
+  document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) closeMenu(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+  menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); });
+  window.addEventListener("hashchange", route);
+  route();
+
+  // Wallet messages as a popup (instead of alert), with open-in-wallet links on phones.
+  const dlg = document.getElementById("walletDialog");
+  document.getElementById("walletDlgClose").onclick = () => dlg.close();
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+  window.walletNotice = function (title, html) {
+    document.getElementById("walletDlgTitle").textContent = title;
+    document.getElementById("walletDlgBody").innerHTML = html.startsWith("<") ? html : "<p>" + html.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])) + "</p>";
+    if (!dlg.open) dlg.showModal();
+  };
+  window.walletNoWallet = function () {
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const here = location.host + location.pathname, url = encodeURIComponent(location.href);
+    walletNotice("No wallet found", mobile
+      ? '<p>Phone browsers can\'t reach a wallet app directly. Open Handshake inside your wallet\'s own browser instead:</p><div class="wbtns"><a href="https://metamask.app.link/dapp/' + here + '">Open in MetaMask</a><a href="https://link.trustwallet.com/open_url?coin_id=60&url=' + url + '">Open in Trust Wallet</a></div><p style="font-size:12.5px;margin:0">Using another wallet? Open its browser and go to handshakeotc.fyi.</p>'
+      : "<p>Handshake needs an EVM browser wallet such as MetaMask, Rabby or Trust Wallet. Install one, refresh this page, then press Connect wallet again.</p>");
+  };
+})();
 </script>
 </body>
 </html>
